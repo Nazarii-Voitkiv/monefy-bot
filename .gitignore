@@ -1,9 +1,8 @@
 .env
 node_modules
+dist
 db-data
 /.vscode
 /.idea
-dist
 npm-debug.log
-node_modules
-.env
+db_data

@@ -1,26 +1,102 @@
-# monefy-bot — Docker setup
+# Monefy Bot
 
-Quick setup to run the bot and Postgres in Docker (dev-friendly).
+Telegram-бот для обліку особистих фінансів з мультивалютною підтримкою. Проєкт побудовано на TypeScript, Telegraf та PostgreSQL із Drizzle ORM. Додаток працює у Docker (окремі контейнери для застосунку та бази).
 
-1. Copy env example and fill secrets:
+## Можливості
+- Додавання доходів та витрат у вільному форматі повідомлення (`- 45.9 PLN coffee @2025-10-22`)
+- Підтримка кількох валют (USD, PLN, UAH) з автоматичною конвертацією в USD
+- Збереження історичних курсів валют та кешування в БД
+- Статистика за день/тиждень/місяць або довільний діапазон із топом категорій
+- Керування категоріями доходів та витрат через команди
 
-```bash
-cp .env.example .env
-# edit .env and set BOT_TOKEN and POSTGRES_PASSWORD
+## Стек
+| Компонент            | Технологія |
+|----------------------|------------|
+| Мова                 | TypeScript |
+| Telegram SDK         | Telegraf   |
+| База даних           | PostgreSQL |
+| ORM / Міграції       | Drizzle ORM + drizzle-kit |
+| Інфраструктура       | Docker + docker-compose |
+| Форматування         | ESLint + Prettier |
+
+## Структура проекту
+```
+project-root/
+├─ src/
+│  ├─ bot/
+│  │  ├─ commands/          # Telegram-команди та обробники повідомлень
+│  │  ├─ helpers/           # Парсер та форматування
+│  │  ├─ middlewares/      # Підготовка контексту бота
+│  │  └─ index.ts          # Точка входу
+│  ├─ config/              # Робота з env
+│  ├─ db/                  # Drizzle schema та клієнт
+│  ├─ services/            # Бізнес-логіка (транзакції, курси, звіти)
+│  ├─ types/               # Загальні типи
+│  └─ utils/               # Утиліти для дат тощо
+├─ drizzle/                # SQL-міграції
+├─ scripts/                # Seed-скрипти та утиліти
+├─ docker-compose.yml
+├─ Dockerfile
+└─ README.md
 ```
 
-2. Start with Docker Compose:
+## Підготовка
+1. Встановіть залежності:
+   ```bash
+   npm install
+   ```
+2. Створіть файл `.env`:
+   ```bash
+   cp .env.example .env
+   # заповніть BOT_TOKEN, DATABASE_URL та FX_API_KEY
+   ```
+3. Запустіть локально (polling):
+   ```bash
+   npm run dev
+   ```
 
+## Docker
 ```bash
 docker compose up --build
 ```
+Це підніме два контейнери:
+- `monefy_db` (PostgreSQL 16-alpine)
+- `monefy_app` (Telegram-бот, командний інтерфейс Telegraf)
 
-This will:
-- start a Postgres 15 container (service name `db`)
-- mount `./sql` into the DB init folder (place migrations there if needed)
-- build the Node app image and run it in dev mode (nodemon) so code changes reflect immediately
+## Корисні скрипти
+- `npm run dev` — запуск у режимі розробки через `tsx`
+- `npm run build` — компіляція TypeScript у `dist/`
+- `npm run start` — запуск зібраного бота
+- `npm run migrate` — застосування SQL-міграцій із каталогу `drizzle/`
+- `npm run generate` — генерація нових міграцій (drizzle-kit)
+- `npm run seed` — базові категорії для всіх користувачів
+- `npm run lint` / `npm run format` — перевірка якості коду
 
-Notes:
-- The app waits for the DB to become healthy before applying a small migration (creates `expenses` table).
-- For production, don't use `nodemon` in Docker; adapt the Dockerfile to run `npm ci --production` and `node` directly.
-- Remove any real secrets from the repo; keep them in `.env` which is ignored by git.
+## Команди бота
+| Команда                    | Опис |
+|---------------------------|------|
+| `/start`                  | привітання та коротка довідка |
+| `/add`                    | нагадування про формат введення транзакцій |
+| `/today`, `/week`, `/month` | статистика за відповідний період |
+| `/stats 2025-10`          | статистика за місяць |
+| `/stats 2025-10-01 2025-10-10` | статистика за довільний діапазон |
+| `/cat list`               | список категорій |
+| `/cat add coffee expense` | створити категорію |
+| `/cat rm coffee`          | видалити категорію |
+| `/rate 2025-10-01`        | курс валют на дату |
+
+> ⚠️ Безкоштовний тариф exchangerate-api.com дозволяє ~1500 запитів/місяць. Кеш у БД гарантує, що кожна дата запитується лише один раз.
+
+Додавання транзакцій виконується простим повідомленням у чаті без команди — бот розпізнає суму, валюту, категорію, дату та нотатку.
+
+## Тестові сценарії
+- `- 20 PLN coffee @2025-10-01` → транзакція з історичним курсом
+- `/today` → підсумок за поточний день
+- `/cat list` → перевірити наявність категорії `coffee`
+- `/stats 2025-10` → агреговані витрати й доходи за місяць
+- `/rate 2025-10-01` → курс для PLN/UAH щодо USD
+
+## Подальші кроки
+- Підключення вебхуків для продакшн-середовища
+- Додавання авторизації через налаштування чату/white-list
+- Розширення статистики (наприклад, графіки через HTML5 + Telegram WebApp)

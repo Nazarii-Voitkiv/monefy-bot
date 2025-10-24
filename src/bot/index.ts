@@ -3,12 +3,14 @@ import { Telegraf } from 'telegraf';
 import { env } from '../config/env.js';
 import { closeDb } from '../db/client.js';
 import type { BotContext } from './context.js';
+import { authorizeMiddleware } from './middlewares/authorize.js';
 import { ensureUserMiddleware } from './middlewares/ensureUser.js';
 import { registerBotCommands } from './commands/index.js';
 
 export async function createBot(): Promise<Telegraf<BotContext>> {
   const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
 
+  bot.use(authorizeMiddleware);
   bot.use(ensureUserMiddleware);
   registerBotCommands(bot);
   await bot.telegram.setMyCommands([

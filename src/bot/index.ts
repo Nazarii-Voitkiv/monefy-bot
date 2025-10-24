@@ -11,6 +11,16 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
 
   bot.use(ensureUserMiddleware);
   registerBotCommands(bot);
+  await bot.telegram.setMyCommands([
+    { command: 'start', description: 'Почати роботу з ботом' },
+    { command: 'add', description: 'Формат додавання транзакцій' },
+    { command: 'today', description: 'Статистика за сьогодні' },
+    { command: 'week', description: 'Статистика за поточний тиждень' },
+    { command: 'month', description: 'Статистика за поточний місяць' },
+    { command: 'stats', description: 'Статистика за діапазон' },
+    { command: 'cat', description: 'Керування категоріями' },
+    { command: 'rate', description: 'Курс валют на дату' }
+  ]);
 
   bot.catch((error, ctx) => {
     console.error('Bot error', error);

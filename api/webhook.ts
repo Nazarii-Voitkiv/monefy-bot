@@ -13,9 +13,31 @@ async function getBot() {
 export default async function handler(req: any, res: any) {
   try {
     if (req.method === 'GET') {
-      // lightweight health check
-      res.status(200).json({ ok: true });
-      return;
+      // If caller asks to init the bot, attempt initialization and return any error.
+      try {
+        const urlHasInit = typeof req.url === 'string' && req.url.includes('init=1');
+        if (urlHasInit) {
+          // attempt to initialize the bot and return any initialization error
+          try {
+            await getBot();
+            res.status(200).json({ ok: true, initialized: true });
+            return;
+          } catch (initErr: any) {
+            console.error('api/webhook init error:', initErr && (initErr.stack || initErr));
+            res.status(500).json({ error: String(initErr?.message || initErr), stack: (initErr?.stack || '').split('\n').slice(0, 20) });
+            return;
+          }
+        }
+
+        // lightweight health check
+        res.status(200).json({ ok: true });
+        return;
+      } catch (err) {
+        // shouldn't happen, but guard
+        console.error('api/webhook GET handler unexpected error:', err);
+        res.status(500).json({ error: String(err) });
+        return;
+      }
     }
 
     if (req.method !== 'POST') {

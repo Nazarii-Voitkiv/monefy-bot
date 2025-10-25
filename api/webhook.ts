@@ -46,14 +46,48 @@ export default async function handler(req: any, res: any) {
     }
 
     const bot = await getBot();
-    const t = await import('telegraf');
-    // telegraf may export webhookCallback as a named export or as a property on the default export depending on bundler/version
-    const webhookCallback = (t as any).webhookCallback ?? (t as any).default?.webhookCallback ?? (t as any).Telegraf?.webhookCallback;
-    if (!webhookCallback) {
-      throw new Error('telegraf.webhookCallback not found');
+    // Some telegraf builds don't export webhookCallback the same way in serverless bundles.
+    // To be robust, avoid using webhookCallback and call bot.handleUpdate(update) directly.
+    // Vercel parses JSON bodies, so req.body should contain the update object.
+    let update = (req as any).body;
+    if (!update) {
+      // fallback: try to read raw body if present as string
+      try {
+        const raw = (req as any).rawBody || '';
+        update = raw ? JSON.parse(raw) : undefined;
+      } catch (parseErr) {
+        console.error('Failed to parse raw body for update:', parseErr);
+      }
     }
-    const cb = (webhookCallback as any)(bot as any, 'http');
-    return cb(req, res);
+
+    if (!update) {
+      res.status(400).json({ error: 'Missing update body' });
+      return;
+    }
+
+    try {
+      // handleUpdate processes a single Telegram update
+      const handler = (bot as any).handleUpdate ?? (bot as any).telegram?.handleUpdate;
+      if (typeof handler === 'function') {
+        await handler.call(bot, update);
+      } else if (typeof (bot as any).handleUpdate === 'function') {
+        await (bot as any).handleUpdate(update);
+      } else {
+        // as last resort, try calling processUpdate
+        if (typeof (bot as any).processUpdate === 'function') {
+          await (bot as any).processUpdate(update);
+        } else {
+          throw new Error('No update handler found on bot instance');
+        }
+      }
+
+      // respond 200 to Telegram quickly
+      res.status(200).send('OK');
+      return;
+    } catch (handleErr: any) {
+      console.error('Error while handling update with bot.handleUpdate:', handleErr && (handleErr.stack || handleErr));
+      throw handleErr;
+    }
   } catch (err: any) {
     // log so Vercel shows the stacktrace in function logs
     console.error('api/webhook error during handling:', err && (err.stack || err));

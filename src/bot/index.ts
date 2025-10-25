@@ -1,4 +1,5 @@
 import { Telegraf } from 'telegraf';
+import http from 'node:http';
 
 import { env } from '../config/env.js';
 import type { BotContext } from './context.js';
@@ -34,6 +35,18 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
 async function main(): Promise<void> {
   const bot = await createBot();
 
+  // Start a minimal HTTP health server so hosting providers (Render, etc.)
+  // detect an open port. Bind to process.env.PORT when present.
+  const port = Number(process.env.PORT ?? 3000);
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ok');
+  });
+
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Health server listening on ${port}`);
+  });
+
   try {
     await bot.launch();
     console.log(`🤖 Bot launched in ${env.NODE_ENV} mode`);
@@ -41,6 +54,8 @@ async function main(): Promise<void> {
     const gracefulStop = async () => {
       console.log('Stopping bot...');
       await bot.stop('SIGTERM');
+      // close the health server gracefully
+      await new Promise<void>((resolve) => server.close(() => resolve()));
       process.exit(0);
     };
 

@@ -47,7 +47,12 @@ export default async function handler(req: any, res: any) {
 
     const bot = await getBot();
     const t = await import('telegraf');
-    const cb = (t as any).webhookCallback(bot as any, 'http');
+    // telegraf may export webhookCallback as a named export or as a property on the default export depending on bundler/version
+    const webhookCallback = (t as any).webhookCallback ?? (t as any).default?.webhookCallback ?? (t as any).Telegraf?.webhookCallback;
+    if (!webhookCallback) {
+      throw new Error('telegraf.webhookCallback not found');
+    }
+    const cb = (webhookCallback as any)(bot as any, 'http');
     return cb(req, res);
   } catch (err: any) {
     // log so Vercel shows the stacktrace in function logs

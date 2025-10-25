@@ -105,7 +105,8 @@ export async function getCategoryBreakdown(
   const sumsBySignIncomes: Record<number, number> = {};
 
   for (const r of (data || []) as any[]) {
-    const val = Number(r.amount_usd) || 0;
+    const raw = Number(r.amount_usd) || 0;
+    const val = Math.abs(raw);
     const id = Number(r.category_id) || 0;
     if (r.sign === 1) {
       sumsBySignIncomes[id] = (sumsBySignIncomes[id] || 0) + val;

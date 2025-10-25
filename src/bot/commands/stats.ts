@@ -28,9 +28,9 @@ async function replyWithStats(ctx: BotContext, label: string, from: Date, to: Da
   lines.push(`📊 Звіт за ${label}`);
   lines.push('');
 
+  const totalIn = Math.abs(summary.incomesUsd) || 0;
   lines.push(`✅ Доходи: ${formatUsd(summary.incomesUsd)}`);
   if (breakdown.incomes.length > 0) {
-    const totalIn = summary.incomesUsd || 0;
     breakdown.incomes.forEach((c) => {
       const pct = totalIn > 0 ? (c.total / totalIn) * 100 : 0;
       lines.push(`• ${c.name} — ${formatUsd(c.total)} (${pct.toFixed(1)}%)`);
@@ -41,12 +41,12 @@ async function replyWithStats(ctx: BotContext, label: string, from: Date, to: Da
 
   lines.push('');
 
+  const totalOut = Math.abs(summary.expensesUsd) || 0;
   lines.push(`❌ Витрати: ${formatUsd(summary.expensesUsd)}`);
   if (breakdown.expenses.length > 0) {
-    const totalOut = summary.expensesUsd || 0;
     breakdown.expenses.forEach((c) => {
       const pct = totalOut > 0 ? (c.total / totalOut) * 100 : 0;
-      lines.push(`• ${c.name} — ${formatUsd(c.total)} (${pct.toFixed(1)}%)`);
+      lines.push(`• ${c.name} — ${formatUsd(-c.total)} (${pct.toFixed(1)}%)`);
     });
   } else {
     lines.push('• Немає витрат за період.');

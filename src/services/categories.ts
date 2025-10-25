@@ -83,10 +83,13 @@ export async function getCategoryByName(
 }
 
 export async function removeCategory(tgUserId: string, name: string): Promise<number> {
+  // Return deleted rows by selecting them — PostgREST/Supabase returns rows
+  // only when `.select()` is used with `delete()`.
   const { data, error } = await supabase
     .from('categories')
     .delete()
-    .match({ tg_user_id: tgUserId, name });
+    .match({ tg_user_id: tgUserId, name })
+    .select('id');
 
   if (error) throw error;
   return Array.isArray(data) ? (data as any[]).length : 0;

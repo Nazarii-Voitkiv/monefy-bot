@@ -25,6 +25,9 @@ const envSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
   DEFAULT_BASE_CURRENCY: z.enum(['USD', 'PLN', 'UAH']).default('USD')
+  ,
+  WEBHOOK_DOMAIN: z.string().url().optional(),
+  WEBHOOK_PATH: z.string().optional()
 });
 
 export const env = envSchema.parse({
@@ -33,6 +36,8 @@ export const env = envSchema.parse({
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
   FX_API_URL: process.env.FX_API_URL,
   FX_API_KEY: process.env.FX_API_KEY,
+  WEBHOOK_DOMAIN: process.env.WEBHOOK_DOMAIN,
+  WEBHOOK_PATH: process.env.WEBHOOK_PATH,
   ALLOWED_USER_IDS: process.env.ALLOWED_USER_IDS,
   NODE_ENV: process.env.NODE_ENV,
   DEFAULT_BASE_CURRENCY: process.env.DEFAULT_BASE_CURRENCY

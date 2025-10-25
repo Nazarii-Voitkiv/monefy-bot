@@ -1,5 +1,4 @@
 import { Telegraf } from 'telegraf';
-import http from 'node:http';
 
 import { env } from '../config/env.js';
 import type { BotContext } from './context.js';
@@ -32,49 +31,7 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
   return bot;
 }
 
-async function main(): Promise<void> {
-  const bot = await createBot();
-
-  // Start a minimal HTTP health server so hosting providers (Render, etc.)
-  // detect an open port. Bind to process.env.PORT when present.
-  const port = Number(process.env.PORT ?? 3000);
-  const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('ok');
-  });
-
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`Health server listening on ${port}`);
-  });
-
-  try {
-    await bot.launch();
-    console.log(`🤖 Bot launched in ${env.NODE_ENV} mode`);
-
-    const gracefulStop = async () => {
-      console.log('Stopping bot...');
-      await bot.stop('SIGTERM');
-      // close the health server gracefully
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-      process.exit(0);
-    };
-
-    process.once('SIGINT', gracefulStop);
-    process.once('SIGTERM', gracefulStop);
-    return;
-  } catch (error: any) {
-    const code = error?.response?.error_code;
-    if (code === 409) {
-      console.error('Failed to start bot: another getUpdates listener is running for this bot (HTTP 409).');
-      console.error('Make sure only one instance of the bot is running, or switch to webhooks.');
-      process.exit(1);
-    }
-
-    // Re-throw unknown errors after logging
-    console.error('Failed to launch bot:', error);
-    process.exit(1);
-  }
-
-}
-
-void main();
+// For serverless deployments (Vercel) we do NOT auto-run the bot here.
+// Instead `createBot()` is exported and the serverless API route will call it
+// and use `webhookCallback` to forward updates from Telegram.
+// createBot is exported above; do not auto-run main in serverless environments.

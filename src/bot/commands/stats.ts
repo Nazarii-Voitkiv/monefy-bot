@@ -12,7 +12,7 @@ import {
   formatDateLabel,
   formatRangeLabel
 } from '../../utils/date.js';
-import { getSummaryStats, getTopExpenseCategories } from '../../services/reports.js';
+import { getSummaryStats, getCategoryBreakdown } from '../../services/reports.js';
 
 async function replyWithStats(ctx: BotContext, label: string, from: Date, to: Date) {
   const user = ctx.state.user;
@@ -22,24 +22,38 @@ async function replyWithStats(ctx: BotContext, label: string, from: Date, to: Da
   }
 
   const summary = await getSummaryStats(user.tgUserId, { from, to });
-  const topCategories = await getTopExpenseCategories(user.tgUserId, { from, to });
+  const breakdown = await getCategoryBreakdown(user.tgUserId, { from, to });
 
-  const lines = [
-    `Звіт за ${label}`,
-    `Доходи: ${formatUsd(summary.incomesUsd)}`,
-    `Витрати: ${formatUsd(summary.expensesUsd)}`,
-    `Баланс: ${formatUsd(summary.totalUsd)}`,
-    ''
-  ];
+  const lines: string[] = [];
+  lines.push(`📊 Звіт за ${label}`);
+  lines.push('');
 
-  if (topCategories.length > 0) {
-    lines.push('Топ категорій:');
-    topCategories.forEach((category) => {
-      lines.push(`• ${category.name} ${formatUsd(category.total)}`);
+  lines.push(`✅ Доходи: ${formatUsd(summary.incomesUsd)}`);
+  if (breakdown.incomes.length > 0) {
+    const totalIn = summary.incomesUsd || 0;
+    breakdown.incomes.forEach((c) => {
+      const pct = totalIn > 0 ? (c.total / totalIn) * 100 : 0;
+      lines.push(`• ${c.name} — ${formatUsd(c.total)} (${pct.toFixed(1)}%)`);
     });
   } else {
-    lines.push('Категорій поки немає.');
+    lines.push('• Немає доходів за період.');
   }
+
+  lines.push('');
+
+  lines.push(`❌ Витрати: ${formatUsd(summary.expensesUsd)}`);
+  if (breakdown.expenses.length > 0) {
+    const totalOut = summary.expensesUsd || 0;
+    breakdown.expenses.forEach((c) => {
+      const pct = totalOut > 0 ? (c.total / totalOut) * 100 : 0;
+      lines.push(`• ${c.name} — ${formatUsd(c.total)} (${pct.toFixed(1)}%)`);
+    });
+  } else {
+    lines.push('• Немає витрат за період.');
+  }
+
+  lines.push('');
+  lines.push(`Баланс: ${formatUsd(summary.totalUsd)}`);
 
   await ctx.reply(lines.join('\n'));
 }

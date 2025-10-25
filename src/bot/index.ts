@@ -39,8 +39,3 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
 
   return bot;
 }
-
-// For serverless deployments (Vercel) we do NOT auto-run the bot here.
-// Instead `createBot()` is exported and the serverless API route will call it
-// and use `webhookCallback` to forward updates from Telegram.
-// createBot is exported above; do not auto-run main in serverless environments.

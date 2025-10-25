@@ -31,7 +31,6 @@ export async function addCategory(
   kind: CategoryKind
 ): Promise<CategoryRecord> {
   const normalized = name.trim().toLowerCase();
-  // Try to insert; if conflict occurs, read existing.
   const { data, error } = await supabase
     .from('categories')
     .insert({ tg_user_id: tgUserId, name: normalized, kind })
@@ -39,7 +38,6 @@ export async function addCategory(
     .limit(1);
 
   if (error) {
-    // conflict or other error -> try to fetch existing
     const existing = await getCategoryByName(tgUserId, normalized, kind);
     if (!existing) throw error;
     return existing;
@@ -83,8 +81,6 @@ export async function getCategoryByName(
 }
 
 export async function removeCategory(tgUserId: string, name: string): Promise<number> {
-  // Return deleted rows by selecting them — PostgREST/Supabase returns rows
-  // only when `.select()` is used with `delete()`.
   const { data, error } = await supabase
     .from('categories')
     .delete()

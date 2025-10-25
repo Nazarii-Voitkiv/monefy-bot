@@ -3,7 +3,7 @@ import NodeCache from 'node-cache';
 import { env } from '../config/env.js';
 import { supabase } from '../db/client.js';
 
-const cache = new NodeCache({ stdTTL: 60 * 60 }); // 1 hour
+const cache = new NodeCache({ stdTTL: 60 * 60 });
 
 export interface FxRate {
   rateDate: string;
@@ -54,7 +54,6 @@ async function persistRate(rate: FxRate): Promise<void> {
     return;
   }
 
-  // Avoid inserting if already exists
   const { data: existing, error: selectErr } = await supabase
     .from('fx_rates')
     .select('rate_date')

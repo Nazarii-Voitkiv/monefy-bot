@@ -43,7 +43,7 @@ export function registerTransactionMessages(bot: import('telegraf').Telegraf<Bot
       });
 
       const replyLines = [
-        `${parsed.sign === 1 ? '✅ Дохід' : '💸 Витрата'} збережена.`,
+        `${parsed.sign === 1 ? '✅ Дохід' : '💸 Витрата'} ${parsed.sign === 1 ? 'збережений' : 'збережена'}.`,
         `${formatCurrency(parsed.amount * parsed.sign, parsed.currency)} → ${formatUsd(transaction.amountUsd)}`,
         `Категорія: ${category.name}`,
         `Дата: ${parsed.rateDate}`

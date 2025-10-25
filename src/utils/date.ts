@@ -35,8 +35,8 @@ export function buildRangeForToday(now: Date): { from: Date; to: Date } {
 }
 
 export function buildRangeForWeek(now: Date): { from: Date; to: Date } {
-  const weekday = now.getUTCDay(); // 0..6
-  const diff = (weekday + 6) % 7; // make Monday start
+  const weekday = now.getUTCDay();
+  const diff = (weekday + 6) % 7;
   const start = startOfDay(subDays(now, diff));
   return {
     from: start,

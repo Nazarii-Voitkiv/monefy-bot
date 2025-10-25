@@ -22,7 +22,6 @@ export async function getSummaryStats(
   tgUserId: string,
   range: StatsRange
 ): Promise<SummaryStats> {
-  // Fetch transactions in range and aggregate in JS since we use Supabase REST
   const { data, error } = await supabase
     .from('transactions')
     .select('amount_usd, sign')
@@ -51,7 +50,6 @@ export async function getTopExpenseCategories(
   range: StatsRange,
   limit = 5
 ): Promise<CategoryStat[]> {
-  // Fetch expense transactions in range and group by category_id in JS
   const { data, error } = await supabase
     .from('transactions')
     .select('category_id, amount_usd')
@@ -74,7 +72,6 @@ export async function getTopExpenseCategories(
 
   if (top.length === 0) return [];
 
-  // Fetch category names for top ids
   const ids = top.map((t) => t.id);
   const { data: cats, error: catsErr } = await supabase.from('categories').select('id, name').in('id', ids);
   if (catsErr) throw catsErr;
@@ -83,4 +80,57 @@ export async function getTopExpenseCategories(
   for (const c of (cats || []) as any[]) namesById[c.id] = c.name;
 
   return top.map((t) => ({ name: namesById[t.id] || 'unknown', total: t.total }));
+}
+
+export interface CategoryBreakdown {
+  incomes: CategoryStat[];
+  expenses: CategoryStat[];
+}
+
+export async function getCategoryBreakdown(
+  tgUserId: string,
+  range: StatsRange
+): Promise<CategoryBreakdown> {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('category_id, amount_usd, sign')
+    .eq('tg_user_id', tgUserId)
+    .gte('txn_at', range.from.toISOString())
+    .lte('txn_at', range.to.toISOString());
+
+  if (error) throw error;
+
+  const sumsBySign: Record<number, number> = {};
+  const sumsBySignExpenses: Record<number, number> = {};
+  const sumsBySignIncomes: Record<number, number> = {};
+
+  for (const r of (data || []) as any[]) {
+    const val = Number(r.amount_usd) || 0;
+    const id = Number(r.category_id) || 0;
+    if (r.sign === 1) {
+      sumsBySignIncomes[id] = (sumsBySignIncomes[id] || 0) + val;
+    } else if (r.sign === -1) {
+      sumsBySignExpenses[id] = (sumsBySignExpenses[id] || 0) + val;
+    }
+  }
+
+  const incomeEntries = Object.entries(sumsBySignIncomes).map(([k, v]) => ({ id: Number(k), total: v }));
+  const expenseEntries = Object.entries(sumsBySignExpenses).map(([k, v]) => ({ id: Number(k), total: v }));
+
+  incomeEntries.sort((a, b) => b.total - a.total);
+  expenseEntries.sort((a, b) => b.total - a.total);
+
+  const ids = Array.from(new Set([...incomeEntries.map((e) => e.id), ...expenseEntries.map((e) => e.id)])).filter(Boolean);
+
+  let namesById: Record<number, string> = {};
+  if (ids.length > 0) {
+    const { data: cats, error: catsErr } = await supabase.from('categories').select('id, name').in('id', ids);
+    if (catsErr) throw catsErr;
+    for (const c of (cats || []) as any[]) namesById[c.id] = c.name;
+  }
+
+  const incomes = incomeEntries.map((e) => ({ name: namesById[e.id] || 'unknown', total: e.total }));
+  const expenses = expenseEntries.map((e) => ({ name: namesById[e.id] || 'unknown', total: e.total }));
+
+  return { incomes, expenses };
 }

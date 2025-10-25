@@ -7,7 +7,6 @@ import { ensureDefaultCategories } from '../src/services/categories.js';
 type UserRow = { id: number; tg_user_id: string };
 
 async function main(): Promise<void> {
-  // Fetch existing users from Supabase
   const { data: allUsers, error } = await supabase
     .from('users')
     .select('id, tg_user_id');
@@ -29,7 +28,6 @@ async function main(): Promise<void> {
     if (created && created.length > 0) {
       usersList.push(created[0] as unknown as UserRow);
     } else {
-      // Try to read the demo user if insert did nothing
       const { data: demo, error: readErr } = await supabase
         .from('users')
         .select('id, tg_user_id')

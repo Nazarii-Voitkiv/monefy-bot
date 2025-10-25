@@ -8,5 +8,3 @@ if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
 export const supabase: SupabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
   auth: { persistSession: false }
 });
-
-// Only Supabase JS is exported now. Direct Postgres/drizzle usage removed.

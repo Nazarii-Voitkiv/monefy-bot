@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/Nazarii-Voitkiv/monefy-bot#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.36.3",

@@ -1,63 +1,56 @@
 import { exit } from 'node:process';
 
-import { eq } from 'drizzle-orm';
-
 import { env } from '../src/config/env.js';
-import { closeDb, db } from '../src/db/client.js';
-import { users } from '../src/db/schema.js';
+import { supabase } from '../src/db/client.js';
 import { ensureDefaultCategories } from '../src/services/categories.js';
 
+type UserRow = { id: number; tg_user_id: string };
+
 async function main(): Promise<void> {
-  const allUsers = await db
-    .select({
-      id: users.id,
-      tgUserId: users.tgUserId
-    })
-    .from(users);
+  // Fetch existing users from Supabase
+  const { data: allUsers, error } = await supabase
+    .from('users')
+    .select('id, tg_user_id');
 
-  if (allUsers.length === 0) {
+  if (error) throw error;
+
+  const usersList = allUsers ?? [];
+
+  if (usersList.length === 0) {
     console.log('No users found. Seed will create a placeholder user.');
-    const [created] = await db
-      .insert(users)
-      .values({
-        tgUserId: 'demo-user',
-        baseCurrency: env.DEFAULT_BASE_CURRENCY
-      })
-      .onConflictDoNothing()
-      .returning({
-        id: users.id,
-        tgUserId: users.tgUserId
-      });
+    const { data: created, error: insertError } = await supabase
+      .from('users')
+      .insert({ tg_user_id: 'demo-user', base_currency: env.DEFAULT_BASE_CURRENCY })
+      .select('id, tg_user_id')
+      .limit(1);
 
-    if (created) {
-      allUsers.push(created);
+    if (insertError) throw insertError;
+
+    if (created && created.length > 0) {
+      usersList.push(created[0] as unknown as UserRow);
     } else {
-      const [demo] = await db
-        .select({
-          id: users.id,
-          tgUserId: users.tgUserId
-        })
-        .from(users)
-        .where(eq(users.tgUserId, 'demo-user'));
-      if (demo) {
-        allUsers.push(demo);
-      }
+      // Try to read the demo user if insert did nothing
+      const { data: demo, error: readErr } = await supabase
+        .from('users')
+        .select('id, tg_user_id')
+        .eq('tg_user_id', 'demo-user')
+        .limit(1);
+      if (readErr) throw readErr;
+      if (demo && demo.length > 0) usersList.push(demo[0]);
     }
   }
 
-  for (const user of allUsers) {
-    await ensureDefaultCategories(user.tgUserId);
-    console.log(`Seeded categories for ${user.tgUserId}`);
+  for (const user of usersList) {
+    await ensureDefaultCategories(user.tg_user_id);
+    console.log(`Seeded categories for ${user.tg_user_id}`);
   }
 }
 
 main()
-  .then(async () => {
-    await closeDb();
+  .then(() => {
     exit(0);
   })
-  .catch(async (error) => {
+  .catch((error) => {
     console.error(error);
-    await closeDb();
     exit(1);
   });

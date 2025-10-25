@@ -1,34 +1,13 @@
 version: '3.9'
 
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: monefy_db
-    restart: always
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-monefy}
-      POSTGRES_USER: ${POSTGRES_USER:-monefy}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-monefy}
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./drizzle:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-monefy}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   app:
     build: .
     container_name: monefy_app
     restart: always
     env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "3000:3000"
     command: npm run start
 
-volumes:
-  db_data:
+volumes: {}

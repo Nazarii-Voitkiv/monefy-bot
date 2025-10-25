@@ -1,8 +1,5 @@
-import { eq } from 'drizzle-orm';
-
 import { env } from '../config/env.js';
-import { db } from '../db/client.js';
-import { users } from '../db/schema.js';
+import { supabase } from '../db/client.js';
 
 export interface UserRecord {
   id: number;
@@ -12,17 +9,22 @@ export interface UserRecord {
 }
 
 export async function findUser(tgUserId: string): Promise<UserRecord | undefined> {
-  const [row] = await db
-    .select({
-      id: users.id,
-      tgUserId: users.tgUserId,
-      baseCurrency: users.baseCurrency,
-      locale: users.locale
-    })
-    .from(users)
-    .where(eq(users.tgUserId, tgUserId));
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, tg_user_id, base_currency, locale')
+    .eq('tg_user_id', tgUserId)
+    .limit(1);
 
-  return row;
+  if (error) throw error;
+  const row = data && data[0];
+  if (!row) return undefined;
+
+  return {
+    id: row.id,
+    tgUserId: row.tg_user_id,
+    baseCurrency: row.base_currency,
+    locale: row.locale
+  };
 }
 
 export async function ensureUser(tgUserId: string): Promise<UserRecord> {
@@ -30,30 +32,30 @@ export async function ensureUser(tgUserId: string): Promise<UserRecord> {
   if (existing) {
     return existing;
   }
+  const { data, error } = await supabase
+    .from('users')
+    .insert({ tg_user_id: tgUserId, base_currency: env.DEFAULT_BASE_CURRENCY, locale: 'uk-UA' })
+    .select('id, tg_user_id, base_currency, locale')
+    .limit(1);
 
-  const [created] = await db
-    .insert(users)
-    .values({
-      tgUserId,
-      baseCurrency: env.DEFAULT_BASE_CURRENCY,
-      locale: 'uk-UA'
-    })
-    .returning({
-      id: users.id,
-      tgUserId: users.tgUserId,
-      baseCurrency: users.baseCurrency,
-      locale: users.locale
-    });
-
-  return created;
+  if (error) throw error;
+  const created = data && data[0];
+  return {
+    id: created.id,
+    tgUserId: created.tg_user_id,
+    baseCurrency: created.base_currency,
+    locale: created.locale
+  };
 }
 
 export async function updateUserBaseCurrency(
   tgUserId: string,
   baseCurrency: string
 ): Promise<void> {
-  await db
-    .update(users)
-    .set({ baseCurrency })
-    .where(eq(users.tgUserId, tgUserId));
+  const { error } = await supabase
+    .from('users')
+    .update({ base_currency: baseCurrency })
+    .eq('tg_user_id', tgUserId);
+
+  if (error) throw error;
 }

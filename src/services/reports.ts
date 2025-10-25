@@ -1,7 +1,4 @@
-import { and, between, eq, sql } from 'drizzle-orm';
-
-import { db } from '../db/client.js';
-import { categories, transactions } from '../db/schema.js';
+import { supabase } from '../db/client.js';
 import type { StatsRange } from '../types/index.js';
 
 export interface SummaryStats {
@@ -25,29 +22,28 @@ export async function getSummaryStats(
   tgUserId: string,
   range: StatsRange
 ): Promise<SummaryStats> {
-  const filter = and(
-    eq(transactions.tgUserId, tgUserId),
-    between(transactions.txnAt, range.from, range.to)
-  );
+  // Fetch transactions in range and aggregate in JS since we use Supabase REST
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount_usd, sign')
+    .eq('tg_user_id', tgUserId)
+    .gte('txn_at', range.from.toISOString())
+    .lte('txn_at', range.to.toISOString());
 
-  const [row] = await db
-    .select({
-      totalUsd: sql<number>`coalesce(sum(${transactions.amountUsd}), 0)`,
-      incomesUsd: sql<number>`coalesce(sum(case when ${transactions.sign} = 1 then ${transactions.amountUsd} else 0 end), 0)`,
-      expensesUsd: sql<number>`coalesce(sum(case when ${transactions.sign} = -1 then ${transactions.amountUsd} else 0 end), 0)`
-    })
-    .from(transactions)
-    .where(filter);
+  if (error) throw error;
+  if (!data || data.length === 0) return EMPTY_SUMMARY;
 
-  if (!row) {
-    return EMPTY_SUMMARY;
+  let total = 0;
+  let incomes = 0;
+  let expenses = 0;
+  for (const r of data as any[]) {
+    const val = Number(r.amount_usd) || 0;
+    total += val;
+    if (r.sign === 1) incomes += val;
+    else if (r.sign === -1) expenses += val;
   }
 
-  return {
-    totalUsd: Number(row.totalUsd),
-    incomesUsd: Number(row.incomesUsd),
-    expensesUsd: Number(row.expensesUsd)
-  };
+  return { totalUsd: total, incomesUsd: incomes, expensesUsd: expenses };
 }
 
 export async function getTopExpenseCategories(
@@ -55,25 +51,36 @@ export async function getTopExpenseCategories(
   range: StatsRange,
   limit = 5
 ): Promise<CategoryStat[]> {
-  const filter = and(
-    eq(transactions.tgUserId, tgUserId),
-    between(transactions.txnAt, range.from, range.to)
-  );
+  // Fetch expense transactions in range and group by category_id in JS
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('category_id, amount_usd')
+    .eq('tg_user_id', tgUserId)
+    .gte('txn_at', range.from.toISOString())
+    .lte('txn_at', range.to.toISOString());
 
-  const rows = await db
-    .select({
-      name: categories.name,
-      total: sql<number>`coalesce(sum(${transactions.amountUsd}), 0)`
-    })
-    .from(transactions)
-    .innerJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(filter)
-    .groupBy(categories.name)
-    .orderBy(sql`sum(${transactions.amountUsd}) asc`)
-    .limit(limit);
+  if (error) throw error;
 
-  return rows.map((row) => ({
-    name: row.name,
-    total: Number(row.total)
-  }));
+  const sums: Record<number, number> = {};
+  for (const r of (data || []) as any[]) {
+    const val = Number(r.amount_usd) || 0;
+    const id = Number(r.category_id);
+    sums[id] = (sums[id] || 0) + val;
+  }
+
+  const entries = Object.entries(sums).map(([k, v]) => ({ id: Number(k), total: v }));
+  entries.sort((a, b) => b.total - a.total);
+  const top = entries.slice(0, limit);
+
+  if (top.length === 0) return [];
+
+  // Fetch category names for top ids
+  const ids = top.map((t) => t.id);
+  const { data: cats, error: catsErr } = await supabase.from('categories').select('id, name').in('id', ids);
+  if (catsErr) throw catsErr;
+
+  const namesById: Record<number, string> = {};
+  for (const c of (cats || []) as any[]) namesById[c.id] = c.name;
+
+  return top.map((t) => ({ name: namesById[t.id] || 'unknown', total: t.total }));
 }

@@ -1,7 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
-
-import { db } from '../db/client.js';
-import { categories } from '../db/schema.js';
+import { supabase } from '../db/client.js';
 import type { CategoryKind } from '../types/index.js';
 
 const DEFAULT_CATEGORIES: Array<{ name: string; kind: CategoryKind }> = [
@@ -23,13 +20,9 @@ export async function ensureDefaultCategories(tgUserId: string): Promise<void> {
   if (existing.length > 0) {
     return;
   }
-
-  await db.insert(categories).values(
-    DEFAULT_CATEGORIES.map((entry) => ({
-      tgUserId,
-      ...entry
-    }))
-  );
+  const payload = DEFAULT_CATEGORIES.map((entry) => ({ tg_user_id: tgUserId, name: entry.name, kind: entry.kind }));
+  const { error } = await supabase.from('categories').insert(payload);
+  if (error) throw error;
 }
 
 export async function addCategory(
@@ -38,44 +31,40 @@ export async function addCategory(
   kind: CategoryKind
 ): Promise<CategoryRecord> {
   const normalized = name.trim().toLowerCase();
-  const [created] = await db
-    .insert(categories)
-    .values({
-      tgUserId,
-      name: normalized,
-      kind
-    })
-    .onConflictDoNothing()
-    .returning({
-      id: categories.id,
-      tgUserId: categories.tgUserId,
-      name: categories.name,
-      kind: categories.kind
-    });
+  // Try to insert; if conflict occurs, read existing.
+  const { data, error } = await supabase
+    .from('categories')
+    .insert({ tg_user_id: tgUserId, name: normalized, kind })
+    .select('id, tg_user_id, name, kind')
+    .limit(1);
 
-  if (!created) {
+  if (error) {
+    // conflict or other error -> try to fetch existing
     const existing = await getCategoryByName(tgUserId, normalized, kind);
-    if (!existing) {
-      throw new Error(`Cannot create category ${normalized}`);
-    }
-
+    if (!existing) throw error;
     return existing;
   }
 
-  return created;
+  const created = data && data[0];
+  return {
+    id: created.id,
+    name: created.name,
+    tgUserId: created.tg_user_id,
+    kind: created.kind
+  };
 }
 
 export async function listCategories(tgUserId: string): Promise<CategoryRecord[]> {
-  return db
-    .select({
-      id: categories.id,
-      tgUserId: categories.tgUserId,
-      name: categories.name,
-      kind: categories.kind
-    })
-    .from(categories)
-    .where(eq(categories.tgUserId, tgUserId))
-    .orderBy(asc(categories.kind), asc(categories.name));
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, tg_user_id, name, kind')
+    .eq('tg_user_id', tgUserId)
+    .order('kind', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+
+  return (data || []).map((r: any) => ({ id: r.id, name: r.name, tgUserId: r.tg_user_id, kind: r.kind }));
 }
 
 export async function getCategoryByName(
@@ -83,29 +72,24 @@ export async function getCategoryByName(
   name: string,
   kind?: CategoryKind
 ): Promise<CategoryRecord | undefined> {
-  const where = kind
-    ? and(eq(categories.tgUserId, tgUserId), eq(categories.name, name), eq(categories.kind, kind))
-    : and(eq(categories.tgUserId, tgUserId), eq(categories.name, name));
+  let query = supabase.from('categories').select('id, tg_user_id, name, kind').eq('tg_user_id', tgUserId).eq('name', name).limit(1);
+  if (kind) query = query.eq('kind', kind as string);
 
-  const [found] = await db
-    .select({
-      id: categories.id,
-      tgUserId: categories.tgUserId,
-      name: categories.name,
-      kind: categories.kind
-    })
-    .from(categories)
-    .where(where);
-
-  return found;
+  const { data, error } = await query;
+  if (error) throw error;
+  const r = data && data[0];
+  if (!r) return undefined;
+  return { id: r.id, name: r.name, tgUserId: r.tg_user_id, kind: r.kind };
 }
 
 export async function removeCategory(tgUserId: string, name: string): Promise<number> {
-  const result = await db
-    .delete(categories)
-    .where(and(eq(categories.tgUserId, tgUserId), eq(categories.name, name)));
+  const { data, error } = await supabase
+    .from('categories')
+    .delete()
+    .match({ tg_user_id: tgUserId, name });
 
-  return result.rowCount ?? 0;
+  if (error) throw error;
+  return Array.isArray(data) ? (data as any[]).length : 0;
 }
 
 export async function requireCategory(

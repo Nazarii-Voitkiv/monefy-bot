@@ -1,7 +1,6 @@
 import { Telegraf } from 'telegraf';
 
 import { env } from '../config/env.js';
-import { closeDb } from '../db/client.js';
 import type { BotContext } from './context.js';
 import { authorizeMiddleware } from './middlewares/authorize.js';
 import { ensureUserMiddleware } from './middlewares/ensureUser.js';
@@ -35,18 +34,32 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
 async function main(): Promise<void> {
   const bot = await createBot();
 
-  await bot.launch();
-  console.log(`🤖 Bot launched in ${env.NODE_ENV} mode`);
+  try {
+    await bot.launch();
+    console.log(`🤖 Bot launched in ${env.NODE_ENV} mode`);
 
-  const gracefulStop = async () => {
-    console.log('Stopping bot...');
-    await bot.stop('SIGTERM');
-    await closeDb();
-    process.exit(0);
-  };
+    const gracefulStop = async () => {
+      console.log('Stopping bot...');
+      await bot.stop('SIGTERM');
+      process.exit(0);
+    };
 
-  process.once('SIGINT', gracefulStop);
-  process.once('SIGTERM', gracefulStop);
+    process.once('SIGINT', gracefulStop);
+    process.once('SIGTERM', gracefulStop);
+    return;
+  } catch (error: any) {
+    const code = error?.response?.error_code;
+    if (code === 409) {
+      console.error('Failed to start bot: another getUpdates listener is running for this bot (HTTP 409).');
+      console.error('Make sure only one instance of the bot is running, or switch to webhooks.');
+      process.exit(1);
+    }
+
+    // Re-throw unknown errors after logging
+    console.error('Failed to launch bot:', error);
+    process.exit(1);
+  }
+
 }
 
 void main();

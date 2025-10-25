@@ -5,7 +5,8 @@ loadEnv();
 
 const envSchema = z.object({
   BOT_TOKEN: z.string().min(1, 'BOT_TOKEN is required'),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
   FX_API_URL: z
     .string()
     .url()
@@ -28,7 +29,8 @@ const envSchema = z.object({
 
 export const env = envSchema.parse({
   BOT_TOKEN: process.env.BOT_TOKEN,
-  DATABASE_URL: process.env.DATABASE_URL,
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
   FX_API_URL: process.env.FX_API_URL,
   FX_API_KEY: process.env.FX_API_KEY,
   ALLOWED_USER_IDS: process.env.ALLOWED_USER_IDS,

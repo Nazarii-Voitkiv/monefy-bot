@@ -1,9 +1,7 @@
-import { eq } from 'drizzle-orm';
 import NodeCache from 'node-cache';
 
 import { env } from '../config/env.js';
-import { db } from '../db/client.js';
-import { fxRates } from '../db/schema.js';
+import { supabase } from '../db/client.js';
 
 const cache = new NodeCache({ stdTTL: 60 * 60 }); // 1 hour
 
@@ -56,39 +54,38 @@ async function persistRate(rate: FxRate): Promise<void> {
     return;
   }
 
-  await db
-    .insert(fxRates)
-    .values({
-      rateDate: rate.rateDate,
-      base: 'USD',
-      pln: toNumericString(rate.pln, 6),
-      uah: toNumericString(rate.uah, 6),
-      usd: toNumericString(rate.usd, 6)
-    })
-    .onConflictDoNothing();
+  // Avoid inserting if already exists
+  const { data: existing, error: selectErr } = await supabase
+    .from('fx_rates')
+    .select('rate_date')
+    .eq('rate_date', rate.rateDate)
+    .limit(1);
+
+  if (selectErr) throw selectErr;
+  if (existing && existing.length > 0) return;
+
+  const { error } = await supabase.from('fx_rates').insert({
+    rate_date: rate.rateDate,
+    base: 'USD',
+    pln: toNumericString(rate.pln, 6),
+    uah: toNumericString(rate.uah, 6),
+    usd: toNumericString(rate.usd, 6)
+  });
+
+  if (error) throw error;
 }
 
 async function fetchStoredRate(date: string): Promise<FxRate | undefined> {
-  const [stored] = await db
-    .select({
-      rateDate: fxRates.rateDate,
-      pln: fxRates.pln,
-      uah: fxRates.uah,
-      usd: fxRates.usd
-    })
-    .from(fxRates)
-    .where(eq(fxRates.rateDate, date));
+  const { data, error } = await supabase
+    .from('fx_rates')
+    .select('rate_date, pln, uah, usd')
+    .eq('rate_date', date)
+    .limit(1);
 
-  if (!stored) {
-    return undefined;
-  }
-
-  return deserializeFxRate({
-    rateDate: stored.rateDate,
-    pln: stored.pln,
-    uah: stored.uah,
-    usd: stored.usd
-  });
+  if (error) throw error;
+  const stored = data && data[0];
+  if (!stored) return undefined;
+  return deserializeFxRate({ rateDate: stored.rate_date, pln: stored.pln, uah: stored.uah, usd: stored.usd });
 }
 
 function buildEndpoint(date: string): string {

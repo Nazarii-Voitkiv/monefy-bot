@@ -1,7 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
-
-import { db } from '../db/client.js';
-import { categories, transactions } from '../db/schema.js';
+import { supabase } from '../db/client.js';
 import type { CategoryRecord } from './categories.js';
 import type { FxRate, FxProvider } from './fxProvider.js';
 
@@ -59,82 +56,74 @@ export async function createTransaction({
 }: CreateTransactionArgs): Promise<TransactionRecord> {
   const fxRate = await fxProvider.getDailyRates(rateDate);
   const amountUsd = convertAmountToUsd(fxRate, amount, currency, sign);
-
-  const [created] = await db
-    .insert(transactions)
-    .values({
-      tgUserId,
-      categoryId: category.id,
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert({
+      tg_user_id: tgUserId,
+      category_id: category.id,
       sign,
       amount: toPgNumeric(amount),
       currency,
-      amountUsd: toPgNumeric(amountUsd),
+      amount_usd: toPgNumeric(amountUsd),
       note,
-      txnAt: txnDate,
-      rateDate: fxRate.rateDate,
-      isRateApprox: fxRate.isApprox
+      txn_at: txnDate.toISOString(),
+      rate_date: fxRate.rateDate,
+      is_rate_approx: fxRate.isApprox
     })
-    .returning({
-      id: transactions.id,
-      tgUserId: transactions.tgUserId,
-      categoryId: transactions.categoryId,
-      amount: transactions.amount,
-      amountUsd: transactions.amountUsd,
-      sign: transactions.sign,
-      currency: transactions.currency,
-      note: transactions.note,
-      txnAt: transactions.txnAt,
-      rateDate: transactions.rateDate,
-      isRateApprox: transactions.isRateApprox
-    });
+    .select(
+      'id, tg_user_id, category_id, amount, amount_usd, sign, currency, note, txn_at, rate_date, is_rate_approx'
+    )
+    .limit(1);
 
+  if (error) throw error;
+  const created = data && data[0];
   return {
-    ...created,
+    id: created.id,
+    tgUserId: created.tg_user_id,
+    categoryId: created.category_id,
     amount: Number(created.amount),
-    amountUsd: Number(created.amountUsd),
+    amountUsd: Number(created.amount_usd),
     sign: created.sign as 1 | -1,
-    currency: created.currency as 'USD' | 'PLN' | 'UAH'
+    currency: created.currency as 'USD' | 'PLN' | 'UAH',
+    note: created.note,
+    txnAt: new Date(created.txn_at),
+    rateDate: created.rate_date,
+    isRateApprox: created.is_rate_approx
   };
 }
 
 export async function deleteTransactionsForCategory(
   categoryId: number
 ): Promise<number> {
-  const result = await db
-    .delete(transactions)
-    .where(eq(transactions.categoryId, categoryId));
-
-  return result.rowCount ?? 0;
+  const { data, error } = await supabase.from('transactions').delete().eq('category_id', categoryId).select('id');
+  if (error) throw error;
+  return Array.isArray(data) ? (data as any[]).length : 0;
 }
 
 export async function getRecentTransactions(
   tgUserId: string,
   limit = 5
 ): Promise<TransactionRecord[]> {
-  const rows = await db
-    .select({
-      id: transactions.id,
-      tgUserId: transactions.tgUserId,
-      categoryId: transactions.categoryId,
-      amount: transactions.amount,
-      amountUsd: transactions.amountUsd,
-      sign: transactions.sign,
-      currency: transactions.currency,
-      note: transactions.note,
-      txnAt: transactions.txnAt,
-      rateDate: transactions.rateDate,
-      isRateApprox: transactions.isRateApprox
-    })
-    .from(transactions)
-    .where(eq(transactions.tgUserId, tgUserId))
-    .orderBy(desc(transactions.txnAt))
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('id, tg_user_id, category_id, amount, amount_usd, sign, currency, note, txn_at, rate_date, is_rate_approx')
+    .eq('tg_user_id', tgUserId)
+    .order('txn_at', { ascending: false })
     .limit(limit);
 
-  return rows.map((row) => ({
-    ...row,
+  if (error) throw error;
+
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    tgUserId: row.tg_user_id,
+    categoryId: row.category_id,
     amount: Number(row.amount),
-    amountUsd: Number(row.amountUsd),
+    amountUsd: Number(row.amount_usd),
     sign: row.sign as 1 | -1,
-    currency: row.currency as 'USD' | 'PLN' | 'UAH'
+    currency: row.currency as 'USD' | 'PLN' | 'UAH',
+    note: row.note,
+    txnAt: new Date(row.txn_at),
+    rateDate: row.rate_date,
+    isRateApprox: row.is_rate_approx
   }));
 }

@@ -25,6 +25,9 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "bugs": {
     "url": "https://github.com/Nazarii-Voitkiv/monefy-bot/issues"
   },

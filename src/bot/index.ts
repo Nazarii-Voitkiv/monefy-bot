@@ -11,8 +11,14 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
 
   bot.use(authorizeMiddleware);
   bot.use(ensureUserMiddleware);
-  registerBotCommands(bot);
-  await bot.telegram.setMyCommands([
+  try {
+    registerBotCommands(bot);
+  } catch (err) {
+    console.error('Failed to register bot commands:', err);
+  }
+
+  try {
+    await bot.telegram.setMyCommands([
     { command: 'start', description: 'Почати роботу з ботом' },
     { command: 'add', description: 'Формат додавання транзакцій' },
     { command: 'today', description: 'Статистика за сьогодні' },
@@ -21,7 +27,10 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
     { command: 'stats', description: 'Статистика за діапазон' },
     { command: 'cat', description: 'Керування категоріями' },
     { command: 'rate', description: 'Курс валют на дату' }
-  ]);
+    ]);
+  } catch (err) {
+    console.error('Failed to set bot commands via Telegram API:', err);
+  }
 
   bot.catch((error, ctx) => {
     console.error('Bot error', error);

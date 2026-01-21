@@ -6,3 +6,5 @@ db-data
 /.idea
 npm-debug.log
 db_data
+src/.DS_Store
+.DS_Store

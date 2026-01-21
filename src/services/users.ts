@@ -1,5 +1,9 @@
+import NodeCache from 'node-cache';
+
 import { env } from '../config/env.js';
 import { supabase } from '../db/client.js';
+
+const userCache = new NodeCache({ stdTTL: 3600 }); // 1 hour cache for user profile
 
 export interface UserRecord {
   id: number;
@@ -9,6 +13,11 @@ export interface UserRecord {
 }
 
 export async function findUser(tgUserId: string): Promise<UserRecord | undefined> {
+  const cached = userCache.get<UserRecord>(`user:${tgUserId}`);
+  if (cached) {
+    return cached;
+  }
+
   const { data, error } = await supabase
     .from('users')
     .select('id, tg_user_id, base_currency, locale')
@@ -19,18 +28,20 @@ export async function findUser(tgUserId: string): Promise<UserRecord | undefined
   const row = data && data[0];
   if (!row) return undefined;
 
-  return {
+  const user = {
     id: row.id,
     tgUserId: row.tg_user_id,
     baseCurrency: row.base_currency,
     locale: row.locale
   };
+  userCache.set(`user:${tgUserId}`, user);
+  return user;
 }
 
-export async function ensureUser(tgUserId: string): Promise<UserRecord> {
+export async function ensureUser(tgUserId: string): Promise<{ user: UserRecord; isNew: boolean }> {
   const existing = await findUser(tgUserId);
   if (existing) {
-    return existing;
+    return { user: existing, isNew: false };
   }
   const { data, error } = await supabase
     .from('users')
@@ -40,12 +51,14 @@ export async function ensureUser(tgUserId: string): Promise<UserRecord> {
 
   if (error) throw error;
   const created = data && data[0];
-  return {
+  const user = {
     id: created.id,
     tgUserId: created.tg_user_id,
     baseCurrency: created.base_currency,
     locale: created.locale
   };
+  userCache.set(`user:${tgUserId}`, user);
+  return { user, isNew: true };
 }
 
 export async function updateUserBaseCurrency(
@@ -58,4 +71,5 @@ export async function updateUserBaseCurrency(
     .eq('tg_user_id', tgUserId);
 
   if (error) throw error;
+  userCache.del(`user:${tgUserId}`);
 }

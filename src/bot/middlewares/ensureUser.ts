@@ -9,10 +9,16 @@ export const ensureUserMiddleware: BotMiddleware = async (ctx, next) => {
     return;
   }
 
-  const user = await ensureUser(tgUserId);
+  // Optimized: returns { user, isNew } and uses cache internally
+  const { user, isNew } = await ensureUser(tgUserId);
   ctx.state.user = user;
 
-  await ensureDefaultCategories(user.tgUserId);
+  // Only check default categories if user is newly created
+  if (isNew) {
+    await ensureDefaultCategories(user.tgUserId);
+  }
+
+  // cached call
   ctx.state.categories = await listCategories(user.tgUserId);
 
   return next();

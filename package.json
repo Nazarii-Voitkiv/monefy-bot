@@ -11,8 +11,6 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
-    "migrate": "drizzle-kit migrate",
-    "generate": "drizzle-kit generate",
     "seed": "tsx scripts/seed.ts",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down --volumes"
@@ -36,18 +34,14 @@
     "@supabase/supabase-js": "^2.76.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
-    "drizzle-orm": "^0.36.3",
     "node-cache": "^5.1.2",
-    "pg": "^8.16.3",
     "telegraf": "^4.16.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
-    "@types/pg": "^8.11.7",
     "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^8.14.0",
-    "drizzle-kit": "^0.25.0",
     "eslint": "^9.14.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",

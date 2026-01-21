@@ -1,5 +1,8 @@
+import NodeCache from 'node-cache';
 import { supabase } from '../db/client.js';
 import type { CategoryKind } from '../types/index.js';
+
+const categoryCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
 
 const DEFAULT_CATEGORIES: Array<{ name: string; kind: CategoryKind }> = [
   { name: 'food', kind: 'expense' },
@@ -15,7 +18,17 @@ export interface CategoryRecord {
   kind: CategoryKind;
 }
 
+function getCacheKey(tgUserId: string): string {
+  return `categories:${tgUserId}`;
+}
+
 export async function ensureDefaultCategories(tgUserId: string): Promise<void> {
+  // Try to check cache first to avoid DB call if we know categories exist
+  const cached = categoryCache.get<CategoryRecord[]>(getCacheKey(tgUserId));
+  if (cached && cached.length > 0) {
+    return;
+  }
+
   const existing = await listCategories(tgUserId);
   if (existing.length > 0) {
     return;
@@ -23,6 +36,8 @@ export async function ensureDefaultCategories(tgUserId: string): Promise<void> {
   const payload = DEFAULT_CATEGORIES.map((entry) => ({ tg_user_id: tgUserId, name: entry.name, kind: entry.kind }));
   const { error } = await supabase.from('categories').insert(payload);
   if (error) throw error;
+
+  categoryCache.del(getCacheKey(tgUserId));
 }
 
 export async function addCategory(
@@ -40,8 +55,12 @@ export async function addCategory(
   if (error) {
     const existing = await getCategoryByName(tgUserId, normalized, kind);
     if (!existing) throw error;
+    // Cache might be stale so we invalidate it just in case
+    categoryCache.del(getCacheKey(tgUserId));
     return existing;
   }
+
+  categoryCache.del(getCacheKey(tgUserId));
 
   const created = data && data[0];
   return {
@@ -53,6 +72,10 @@ export async function addCategory(
 }
 
 export async function listCategories(tgUserId: string): Promise<CategoryRecord[]> {
+  const key = getCacheKey(tgUserId);
+  const cached = categoryCache.get<CategoryRecord[]>(key);
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from('categories')
     .select('id, tg_user_id, name, kind')
@@ -62,7 +85,9 @@ export async function listCategories(tgUserId: string): Promise<CategoryRecord[]
 
   if (error) throw error;
 
-  return (data || []).map((r: any) => ({ id: r.id, name: r.name, tgUserId: r.tg_user_id, kind: r.kind }));
+  const result = (data || []).map((r: any) => ({ id: r.id, name: r.name, tgUserId: r.tg_user_id, kind: r.kind }));
+  categoryCache.set(key, result);
+  return result;
 }
 
 export async function getCategoryByName(
@@ -88,6 +113,11 @@ export async function removeCategory(tgUserId: string, name: string): Promise<nu
     .select('id');
 
   if (error) throw error;
+
+  if (Array.isArray(data) && data.length > 0) {
+    categoryCache.del(getCacheKey(tgUserId));
+  }
+
   return Array.isArray(data) ? (data as any[]).length : 0;
 }
 

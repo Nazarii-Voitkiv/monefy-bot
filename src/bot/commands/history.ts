@@ -73,6 +73,54 @@ export function registerHistoryCommand(bot: import('telegraf').Telegraf<BotConte
         await ctx.reply('Введіть нову нотатку:', Markup.forceReply());
         await ctx.answerCbQuery();
     });
+
+    // --- Category Editing ---
+    bot.action(/txn_edit_cat:(\d+)/, async (ctx) => {
+        const id = parseInt(ctx.match[1], 10);
+        await sendCategorySelection(ctx, id);
+    });
+
+    bot.action(/txn_set_cat:(\d+):(\d+)/, async (ctx) => {
+        const id = parseInt(ctx.match[1], 10);
+        const catId = parseInt(ctx.match[2], 10);
+        const user = ctx.state.user!;
+        try {
+            await updateTransaction(id, user.tgUserId, { categoryId: catId }, fxProvider);
+            await ctx.answerCbQuery('Категорію оновлено');
+            await sendTransactionDetails(ctx, id);
+        } catch (error) {
+            await ctx.answerCbQuery(`Помилка: ${(error as Error).message}`);
+        }
+    });
+
+    // --- Currency Editing ---
+    bot.action(/txn_edit_curr:(\d+)/, async (ctx) => {
+        const id = parseInt(ctx.match[1], 10);
+        await ctx.editMessageText(
+            'Оберіть нову валюту:',
+            Markup.inlineKeyboard([
+                [
+                    Markup.button.callback('USD', `txn_set_curr:${id}:USD`),
+                    Markup.button.callback('UAH', `txn_set_curr:${id}:UAH`),
+                    Markup.button.callback('PLN', `txn_set_curr:${id}:PLN`)
+                ],
+                [Markup.button.callback('« Назад', `txn_view:${id}`)]
+            ])
+        );
+    });
+
+    bot.action(/txn_set_curr:(\d+):(\w+)/, async (ctx) => {
+        const id = parseInt(ctx.match[1], 10);
+        const currency = ctx.match[2] as 'USD' | 'UAH' | 'PLN';
+        const user = ctx.state.user!;
+        try {
+            await updateTransaction(id, user.tgUserId, { currency }, fxProvider);
+            await ctx.answerCbQuery('Валюту оновлено');
+            await sendTransactionDetails(ctx, id);
+        } catch (error) {
+            await ctx.answerCbQuery(`Помилка: ${(error as Error).message}`);
+        }
+    });
 }
 
 async function sendHistoryPage(ctx: BotContext, page: number, isEdit = false) {
@@ -186,10 +234,14 @@ async function sendTransactionDetails(ctx: BotContext, id: number) {
             text,
             Markup.inlineKeyboard([
                 [
-                    Markup.button.callback('✏️ Змінити суму', `txn_edit_amt:${id} `),
-                    Markup.button.callback('✏️ Нотатку', `txn_edit_note:${id} `)
+                    Markup.button.callback('✏️ Суму', `txn_edit_amt:${id}`),
+                    Markup.button.callback('✏️ Валюту', `txn_edit_curr:${id}`),
                 ],
-                [Markup.button.callback('🗑 Видалити', `txn_del_ask:${id} `)],
+                [
+                    Markup.button.callback('✏️ Категорію', `txn_edit_cat:${id}`),
+                    Markup.button.callback('✏️ Нотатку', `txn_edit_note:${id}`)
+                ],
+                [Markup.button.callback('🗑 Видалити', `txn_del_ask:${id}`)],
                 [Markup.button.callback('« Назад до списку', 'txn_list_back')]
             ])
         );
@@ -225,4 +277,43 @@ export async function handleTransactionEdit(ctx: BotContext, state: UserStateTyp
     }
 
     userState.delete(ctx.state.user!.tgUserId);
+}
+
+async function sendCategorySelection(ctx: BotContext, txnId: number) {
+    const user = ctx.state.user!;
+    try {
+        const { data } = await supabase
+            .from('transactions')
+            .select('sign')
+            .eq('id', txnId)
+            .single();
+
+        if (!data) {
+            await ctx.answerCbQuery('Транзакція не знайдена');
+            return;
+        }
+
+        const sign = data.sign; // 1 or -1
+        const kind = sign === 1 ? 'income' : 'expense';
+
+        const allCategories = await listCategories(user.tgUserId);
+        const filtered = allCategories.filter(c => c.kind === kind);
+
+        // Split into chunks of 2 for better layout
+        const buttons = [];
+        for (let i = 0; i < filtered.length; i += 2) {
+            const row = [];
+            row.push(Markup.button.callback(filtered[i].name, `txn_set_cat:${txnId}:${filtered[i].id}`));
+            if (filtered[i + 1]) {
+                row.push(Markup.button.callback(filtered[i + 1].name, `txn_set_cat:${txnId}:${filtered[i + 1].id}`));
+            }
+            buttons.push(row);
+        }
+        buttons.push([Markup.button.callback('« Назад', `txn_view:${txnId}`)]);
+
+        await ctx.editMessageText('Оберіть нову категорію:', Markup.inlineKeyboard(buttons));
+    } catch (e) {
+        console.error(e);
+        await ctx.answerCbQuery('Помилка завантаження категорій');
+    }
 }

@@ -6,6 +6,8 @@ import { parseTransactionInput, ParseError } from '../helpers/parser.js';
 import { requireCategory } from '../../services/categories.js';
 import { fxProvider } from '../../services/fxProvider.js';
 import { createTransaction } from '../../services/transactions.js';
+import { handleTransactionEdit } from './history.js';
+import { userState } from '../state.js';
 
 const SIGN_KIND_MAP = {
   1: 'income',
@@ -22,6 +24,12 @@ export function registerTransactionMessages(bot: import('telegraf').Telegraf<Bot
     const user = ctx.state.user;
     if (!user) {
       await ctx.reply('Користувач не знайдений.');
+      return;
+    }
+
+    const currentState = userState.get(user.tgUserId);
+    if (currentState && currentState.type !== 'IDLE') {
+      await handleTransactionEdit(ctx, currentState, text);
       return;
     }
 

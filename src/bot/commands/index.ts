@@ -7,6 +7,7 @@ import { registerRateCommand } from './rate.js';
 import { registerStartCommand } from './start.js';
 import { registerStatsCommands } from './stats.js';
 import { registerTransactionMessages } from './transactions.js';
+import { registerHistoryCommand } from './history.js';
 
 export function registerBotCommands(bot: Telegraf<BotContext>): void {
   registerStartCommand(bot);
@@ -14,5 +15,6 @@ export function registerBotCommands(bot: Telegraf<BotContext>): void {
   registerStatsCommands(bot);
   registerCategoryCommands(bot);
   registerRateCommand(bot);
+  registerHistoryCommand(bot);
   registerTransactionMessages(bot);
 }

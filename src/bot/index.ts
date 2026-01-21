@@ -19,15 +19,19 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
 
   try {
     await bot.telegram.setMyCommands([
-    { command: 'start', description: 'Почати роботу з ботом' },
-    { command: 'add', description: 'Формат додавання транзакцій' },
-    { command: 'today', description: 'Статистика за сьогодні' },
-    { command: 'week', description: 'Статистика за поточний тиждень' },
-    { command: 'month', description: 'Статистика за поточний місяць' },
-    { command: 'stats', description: 'Статистика за діапазон' },
-    { command: 'cat', description: 'Керування категоріями' },
-    { command: 'rate', description: 'Курс валют на дату' }
+      { command: 'start', description: 'Почати роботу з ботом' },
+      { command: 'add', description: 'Формат додавання транзакцій' },
+      { command: 'today', description: 'Статистика за сьогодні' },
+      { command: 'week', description: 'Статистика за поточний тиждень' },
+      { command: 'month', description: 'Статистика за поточний місяць' },
+      { command: 'stats', description: 'Статистика за діапазон' },
+      { command: 'cat', description: 'Керування категоріями' },
+      { command: 'rate', description: 'Курс валют на дату' },
+      { command: 'history', description: 'Історія транзакцій' }
     ]);
+
+    await bot.telegram.setChatMenuButton({ menuButton: { type: 'commands' } });
+
   } catch (err) {
     console.error('Failed to set bot commands via Telegram API:', err);
   }

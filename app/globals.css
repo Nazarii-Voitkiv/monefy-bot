@@ -89,10 +89,10 @@ a {
 }
 
 .adminHero {
-  align-items: flex-start;
+  align-items: flex-end;
   display: flex;
-  flex-direction: column;
   gap: 16px;
+  justify-content: space-between;
 }
 
 .heroHeading p {
@@ -101,7 +101,7 @@ a {
 
 .heroActions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -138,10 +138,10 @@ p {
 }
 
 .sectionHeading {
-  align-items: flex-start;
+  align-items: baseline;
   display: flex;
-  flex-direction: column;
   gap: 16px;
+  justify-content: space-between;
   margin-bottom: 18px;
 }
 
@@ -158,7 +158,7 @@ p {
 .summaryGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .summaryCard {
@@ -194,12 +194,16 @@ p {
 .formGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .filterGroup {
   display: grid;
   gap: 8px;
+}
+
+.filterGroup.wide {
+  grid-column: span 2;
 }
 
 .filterGroup label {
@@ -228,11 +232,16 @@ textarea {
 
 .toolbar,
 .periodChips,
-.authActions,
 .pager,
 .rowActions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.authActions {
   align-items: flex-start;
+  display: flex;
   flex-direction: column;
   gap: 10px;
 }
@@ -283,8 +292,12 @@ textarea {
 .breakdownGrid {
   display: grid;
   gap: 18px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
   margin-top: 18px;
+}
+
+.breakdownGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .transactionsTable,
@@ -306,8 +319,8 @@ textarea {
 .categoryRow {
   align-items: flex-start;
   display: flex;
-  flex-direction: column;
   gap: 14px;
+  justify-content: space-between;
 }
 
 .transactionCard strong,
@@ -318,7 +331,7 @@ textarea {
 }
 
 .transactionCardAmount {
-  text-align: left;
+  text-align: right;
 }
 
 .transactionCardAmount span,
@@ -328,7 +341,8 @@ textarea {
 
 .transactionMeta {
   color: var(--text-muted);
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 12px;
 }
@@ -336,7 +350,7 @@ textarea {
 .categoryComposer {
   display: grid;
   gap: 10px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) auto;
   margin-bottom: 16px;
 }
 
@@ -461,6 +475,10 @@ textarea {
   margin-top: 16px;
 }
 
+.rowActions {
+  align-items: flex-start;
+}
+
 .rowActions button,
 .pager button,
 .heroActions button,
@@ -537,6 +555,10 @@ code {
   .formGrid,
   .categoryComposer {
     grid-template-columns: 1fr;
+  }
+
+  .filterGroup.wide {
+    grid-column: span 1;
   }
 
   .adminHero,

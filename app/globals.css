@@ -388,13 +388,23 @@ textarea {
 }
 
 .chartFrame {
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .lineChart {
   display: block;
-  min-width: 720px;
   width: 100%;
+}
+
+.chartViewport {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+}
+
+.chartCanvas {
+  min-width: 720px;
 }
 
 .chartGridLine {
@@ -591,5 +601,9 @@ code {
 
   .transactionCardAmount {
     text-align: left;
+  }
+
+  .chartCanvas {
+    min-width: 640px;
   }
 }

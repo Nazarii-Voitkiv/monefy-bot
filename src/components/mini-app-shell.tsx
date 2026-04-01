@@ -244,46 +244,50 @@ function DailyFlowChart({
             <span className="legendChip expense">Витрати</span>
           </div>
 
-          <div className="chartFrame">
-            <svg
-              aria-label="Графік руху по днях"
-              className="lineChart"
-              role="img"
-              viewBox={`0 0 ${width} ${height}`}
-            >
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-                const y = paddingTop + chartHeight - ratio * chartHeight;
-                return (
-                  <line
-                    className="chartGridLine"
-                    key={ratio}
-                    x1={paddingX}
-                    x2={width - paddingX}
-                    y1={y}
-                    y2={y}
-                  />
-                );
-              })}
+          <div className="chartViewport">
+            <div className="chartCanvas">
+              <div className="chartFrame">
+                <svg
+                  aria-label="Графік руху по днях"
+                  className="lineChart"
+                  role="img"
+                  viewBox={`0 0 ${width} ${height}`}
+                >
+                  {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+                    const y = paddingTop + chartHeight - ratio * chartHeight;
+                    return (
+                      <line
+                        className="chartGridLine"
+                        key={ratio}
+                        x1={paddingX}
+                        x2={width - paddingX}
+                        y1={y}
+                        y2={y}
+                      />
+                    );
+                  })}
 
-              <path className="chartLine incomeLine" d={incomesPath} />
-              <path className="chartLine expenseLine" d={expensesPath} />
+                  <path className="chartLine incomeLine" d={incomesPath} />
+                  <path className="chartLine expenseLine" d={expensesPath} />
 
-              {items.map((item, index) => (
-                <g key={item.date}>
-                  <circle className="chartPoint incomePoint" cx={toX(index)} cy={toY(item.incomesUsd)} r="4" />
-                  <circle className="chartPoint expensePoint" cx={toX(index)} cy={toY(item.expensesUsd)} r="4" />
-                </g>
-              ))}
-            </svg>
-          </div>
+                  {items.map((item, index) => (
+                    <g key={item.date}>
+                      <circle className="chartPoint incomePoint" cx={toX(index)} cy={toY(item.incomesUsd)} r="4" />
+                      <circle className="chartPoint expensePoint" cx={toX(index)} cy={toY(item.expensesUsd)} r="4" />
+                    </g>
+                  ))}
+                </svg>
+              </div>
 
-          <div className="chartXAxis">
-            {visibleLabels.map((item) => (
-              <span className="chartAxisLabel" key={`${item.date}-axis`}>
-                <span className="chartAxisMonth">{item.date.slice(5, 7)}</span>
-                <span className="chartAxisDay">{item.date.slice(8, 10)}</span>
-              </span>
-            ))}
+              <div className="chartXAxis">
+                {visibleLabels.map((item) => (
+                  <span className="chartAxisLabel" key={`${item.date}-axis`}>
+                    <span className="chartAxisMonth">{item.date.slice(5, 7)}</span>
+                    <span className="chartAxisDay">{item.date.slice(8, 10)}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

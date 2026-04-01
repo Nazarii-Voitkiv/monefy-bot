@@ -401,10 +401,15 @@ textarea {
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 6px;
+  scrollbar-width: none;
 }
 
 .chartCanvas {
   min-width: 720px;
+}
+
+.chartViewport::-webkit-scrollbar {
+  display: none;
 }
 
 .chartGridLine {

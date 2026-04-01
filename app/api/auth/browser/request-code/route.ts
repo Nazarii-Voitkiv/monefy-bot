@@ -67,11 +67,11 @@ export async function POST(): Promise<Response> {
     await sendTelegramMessage(
       targetUserId,
       [
-        'Your Monefy login code:',
+        'Твій код входу в Monefy:',
         '',
         code,
         '',
-        'It expires in 30 minutes.'
+        'Код діє 30 хвилин.'
       ].join('\n')
     );
     touchBrowserOtpThrottle(targetUserId, nowSeconds);

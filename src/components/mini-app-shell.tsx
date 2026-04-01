@@ -193,6 +193,83 @@ function SummaryCard({
   );
 }
 
+function ExpenseDonutChart({
+  items,
+  total
+}: {
+  items: DashboardResponse['breakdown']['expenses'];
+  total: number;
+}) {
+  const palette = ['#4d7ce8', '#0d7a53', '#ba4735', '#b8860b', '#6c5ce7', '#0f766e'];
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <section className="panel">
+      <div className="sectionHeading">
+        <div>
+          <h3>Діаграма витрат</h3>
+          <span>Розподіл витрат за категоріями у вибраному наборі фільтрів.</span>
+        </div>
+      </div>
+
+      {items.length === 0 || total <= 0 ? (
+        <p className="emptyState">Ще немає витрат для побудови діаграми.</p>
+      ) : (
+        <div className="donutCard">
+          <div className="donutWrap" aria-label="Діаграма витрат">
+            <svg className="donutChart" viewBox="0 0 200 200" role="img">
+              <circle className="donutTrack" cx="100" cy="100" r={radius} />
+              {items.map((item, index) => {
+                const portion = item.total / total;
+                const dash = portion * circumference;
+                const currentOffset = offset;
+                offset += dash;
+
+                return (
+                  <circle
+                    className="donutSegment"
+                    cx="100"
+                    cy="100"
+                    key={item.name}
+                    r={radius}
+                    stroke={palette[index % palette.length]}
+                    strokeDasharray={`${dash} ${circumference - dash}`}
+                    strokeDashoffset={-currentOffset}
+                  />
+                );
+              })}
+            </svg>
+            <div className="donutCenter">
+              <strong>{formatMoney(total)}</strong>
+              <span>Витрати</span>
+            </div>
+          </div>
+
+          <div className="donutLegend">
+            {items.map((item, index) => (
+              <div className="legendRow" key={item.name}>
+                <div className="legendMeta">
+                  <span
+                    className="legendSwatch"
+                    style={{ backgroundColor: palette[index % palette.length] }}
+                  />
+                  <strong>{item.name}</strong>
+                </div>
+                <div className="legendValues">
+                  <span>{formatMoney(item.total)}</span>
+                  <small>{((item.total / total) * 100).toFixed(1)}%</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function pickFirstCategory(
   categories: FrontendCategory[],
   sign: 1 | -1
@@ -466,6 +543,7 @@ export function MiniAppShell() {
   async function handleSendCode(): Promise<void> {
     setSendingCode(true);
     setAuthError(null);
+    setNotice(null);
 
     try {
       const response = await fetch('/api/auth/browser/request-code', { method: 'POST' });
@@ -475,6 +553,7 @@ export function MiniAppShell() {
         tone: 'success'
       });
     } catch (error) {
+      setNotice(null);
       setAuthError(error instanceof Error ? error.message : 'Failed to send login code');
     } finally {
       setSendingCode(false);
@@ -484,6 +563,7 @@ export function MiniAppShell() {
   async function handleVerifyCode(): Promise<void> {
     setVerifyingCode(true);
     setAuthError(null);
+    setNotice(null);
 
     try {
       const response = await fetch('/api/auth/browser/verify-code', {
@@ -497,6 +577,7 @@ export function MiniAppShell() {
       setNotice(null);
       setAuthState('ready');
     } catch (error) {
+      setNotice(null);
       setAuthError(error instanceof Error ? error.message : 'Failed to verify login code');
     } finally {
       setVerifyingCode(false);
@@ -707,10 +788,9 @@ export function MiniAppShell() {
   }
 
   return (
-    <main className="shell adminShell">
+      <main className="shell adminShell">
       <section className="heroCard adminHero">
         <div className="heroHeading">
-          <span className="eyebrow">Dashboard</span>
           <h1>Дашборд</h1>
           <p>Твої фінанси</p>
         </div>
@@ -1128,6 +1208,10 @@ export function MiniAppShell() {
 
       {dashboard ? (
         <div className="breakdownGrid">
+          <ExpenseDonutChart
+            items={dashboard.breakdown.expenses}
+            total={dashboard.summary.expensesUsd}
+          />
           <section className="panel">
             <div className="sectionHeading">
               <h3>Доходи по категоріях</h3>

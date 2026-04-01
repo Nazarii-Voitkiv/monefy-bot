@@ -89,10 +89,10 @@ a {
 }
 
 .adminHero {
-  align-items: flex-end;
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   gap: 16px;
-  justify-content: space-between;
 }
 
 .heroHeading p {
@@ -101,7 +101,7 @@ a {
 
 .heroActions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -140,8 +140,8 @@ p {
 .sectionHeading {
   align-items: flex-start;
   display: flex;
+  flex-direction: column;
   gap: 16px;
-  justify-content: space-between;
   margin-bottom: 18px;
 }
 
@@ -158,7 +158,7 @@ p {
 .summaryGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .summaryCard {
@@ -194,16 +194,12 @@ p {
 .formGrid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .filterGroup {
   display: grid;
   gap: 8px;
-}
-
-.filterGroup.wide {
-  grid-column: span 2;
 }
 
 .filterGroup label {
@@ -219,8 +215,10 @@ textarea {
   border: 1px solid rgba(31, 22, 14, 0.12);
   border-radius: 16px;
   color: var(--text-main);
+  display: block;
   min-height: 48px;
   padding: 12px 14px;
+  width: 100%;
 }
 
 .textArea {
@@ -234,7 +232,8 @@ textarea {
 .pager,
 .rowActions {
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  flex-direction: column;
   gap: 10px;
 }
 
@@ -284,12 +283,8 @@ textarea {
 .breakdownGrid {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
+  grid-template-columns: 1fr;
   margin-top: 18px;
-}
-
-.breakdownGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .transactionsTable,
@@ -311,8 +306,8 @@ textarea {
 .categoryRow {
   align-items: flex-start;
   display: flex;
+  flex-direction: column;
   gap: 14px;
-  justify-content: space-between;
 }
 
 .transactionCard strong,
@@ -323,7 +318,7 @@ textarea {
 }
 
 .transactionCardAmount {
-  text-align: right;
+  text-align: left;
 }
 
 .transactionCardAmount span,
@@ -333,21 +328,101 @@ textarea {
 
 .transactionMeta {
   color: var(--text-muted);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: grid;
+  gap: 6px;
   margin-top: 12px;
 }
 
 .categoryComposer {
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) auto;
+  grid-template-columns: 1fr;
   margin-bottom: 16px;
 }
 
 .categoryInfo {
   min-width: 0;
+}
+
+.donutCard {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+}
+
+.donutWrap {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.donutChart {
+  display: block;
+  height: 220px;
+  transform: rotate(-90deg);
+  width: 220px;
+}
+
+.donutTrack,
+.donutSegment {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 18;
+}
+
+.donutTrack {
+  stroke: rgba(31, 22, 14, 0.08);
+}
+
+.donutCenter {
+  display: grid;
+  inset: 50%;
+  place-items: center;
+  position: absolute;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.donutCenter strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.donutCenter span,
+.legendValues small {
+  color: var(--text-muted);
+}
+
+.donutLegend {
+  display: grid;
+  gap: 10px;
+}
+
+.legendRow,
+.legendMeta,
+.legendValues {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.legendMeta {
+  justify-content: flex-start;
+}
+
+.legendValues {
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+}
+
+.legendSwatch {
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+  height: 12px;
+  width: 12px;
 }
 
 .barMeta {
@@ -381,6 +456,19 @@ textarea {
   padding: 12px 14px;
 }
 
+.rowActions,
+.pager {
+  margin-top: 16px;
+}
+
+.rowActions button,
+.pager button,
+.heroActions button,
+.toolbar button,
+.authActions button {
+  align-self: flex-start;
+}
+
 .notice.success {
   background: rgba(13, 122, 83, 0.08);
   color: var(--positive);
@@ -408,6 +496,28 @@ textarea {
   width: 100%;
 }
 
+.modalCard .formGrid {
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+.modalCard .filterGroup,
+.modalCard .sectionHeading,
+.modalCard .toolbar {
+  width: 100%;
+}
+
+.modalCard .rowActions,
+.modalCard .toolbar {
+  align-items: stretch;
+}
+
+.modalCard .primaryButton,
+.modalCard .secondaryButton,
+.modalCard .dangerButton {
+  align-self: flex-start;
+}
+
 code {
   background: rgba(31, 22, 14, 0.08);
   border-radius: 8px;
@@ -427,10 +537,6 @@ code {
   .formGrid,
   .categoryComposer {
     grid-template-columns: 1fr;
-  }
-
-  .filterGroup.wide {
-    grid-column: span 1;
   }
 
   .adminHero,

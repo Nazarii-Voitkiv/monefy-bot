@@ -3,7 +3,7 @@ import { createHash, createHmac, randomInt, timingSafeEqual } from 'node:crypto'
 import NodeCache from 'node-cache';
 
 export const BROWSER_OTP_TTL_SECONDS = 60 * 30;
-export const BROWSER_OTP_COOLDOWN_SECONDS = 60;
+export const BROWSER_OTP_COOLDOWN_SECONDS = 60 * 30;
 export const BROWSER_OTP_MAX_ATTEMPTS = 5;
 export const BROWSER_CHALLENGE_COOKIE_NAME = 'monefy_browser_challenge';
 

@@ -209,10 +209,7 @@ function DailyFlowChart({
     ...items.flatMap((item) => [item.expensesUsd, item.incomesUsd]),
     1
   );
-  const labelStep = items.length > 20 ? 4 : items.length > 12 ? 3 : items.length > 8 ? 2 : 1;
-  const visibleLabels = items.filter(
-    (_item, index) => index % labelStep === 0 || index === items.length - 1
-  );
+  const visibleLabels = items;
 
   const toY = (value: number): number =>
     paddingTop + chartHeight - (value / maxValue) * chartHeight;
@@ -283,7 +280,8 @@ function DailyFlowChart({
           <div className="chartXAxis">
             {visibleLabels.map((item) => (
               <span className="chartAxisLabel" key={`${item.date}-axis`}>
-                {item.date.slice(5)}
+                <span className="chartAxisMonth">{item.date.slice(5, 7)}</span>
+                <span className="chartAxisDay">{item.date.slice(8, 10)}</span>
               </span>
             ))}
           </div>

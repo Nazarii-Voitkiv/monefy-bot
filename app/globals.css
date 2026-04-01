@@ -439,10 +439,24 @@ textarea {
 }
 
 .chartAxisLabel {
-  display: inline-block;
-  font-size: 0.95rem;
+  align-items: center;
+  display: inline-flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  gap: 2px;
   min-width: 0;
   text-align: center;
+}
+
+.chartAxisMonth,
+.chartAxisDay {
+  display: block;
+  line-height: 1;
+}
+
+.chartAxisDay {
+  color: var(--text-main);
+  font-weight: 700;
 }
 
 .barMeta {

@@ -4,7 +4,7 @@
   "description": "Telegram bot for personal finance tracking with multi-currency support.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint app src tests --ext .ts,.tsx",
     "lint:fix": "npm run lint -- --fix",

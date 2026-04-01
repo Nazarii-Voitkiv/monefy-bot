@@ -50,6 +50,18 @@ test('validates Telegram initData payload', () => {
   assert.equal(payload.authDate, authDate);
 });
 
+test('validates Telegram initData payload when signature is present', () => {
+  const authDate = Math.floor(NOW / 1000);
+  const params = new URLSearchParams(buildInitData({ authDate, userId: 489177683 }));
+  params.set('signature', 'base64url-signature-from-telegram');
+  params.set('hash', buildTelegramHash(params, BOT_TOKEN));
+
+  const payload = validateTelegramInitData(params.toString(), BOT_TOKEN, NOW);
+
+  assert.equal(payload.user.id, 489177683);
+  assert.equal(payload.authDate, authDate);
+});
+
 test('rejects expired Telegram initData payload', () => {
   const authDate = Math.floor((NOW - (TELEGRAM_AUTH_MAX_AGE_SECONDS + 1) * 1000) / 1000);
 

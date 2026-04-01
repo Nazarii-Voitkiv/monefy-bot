@@ -19,7 +19,7 @@ export interface ValidatedTelegramInitData {
 
 function buildDataCheckString(params: URLSearchParams): string {
   return Array.from(params.entries())
-    .filter(([key]) => key !== 'hash' && key !== 'signature')
+    .filter(([key]) => key !== 'hash')
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');

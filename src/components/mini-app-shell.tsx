@@ -56,20 +56,6 @@ function setTelegramCssVariables(): void {
   telegram.expand();
 
   const root = document.documentElement;
-  const theme = telegram.themeParams;
-  if (theme?.bg_color) {
-    root.style.setProperty('--app-bg', theme.bg_color);
-  }
-  if (theme?.text_color) {
-    root.style.setProperty('--text-main', theme.text_color);
-  }
-  if (theme?.hint_color) {
-    root.style.setProperty('--text-muted', theme.hint_color);
-  }
-  if (theme?.button_color) {
-    root.style.setProperty('--accent', theme.button_color);
-  }
-
   const safeArea = telegram.contentSafeAreaInset ?? telegram.safeAreaInset;
   root.style.setProperty('--tg-safe-top', `${safeArea?.top ?? 0}px`);
   root.style.setProperty('--tg-safe-bottom', `${safeArea?.bottom ?? 0}px`);
@@ -369,9 +355,9 @@ export function MiniAppShell() {
       <main className="shell">
         <section className="heroCard">
           <span className="eyebrow">Private Access</span>
-          <h1>Цей дашборд відкривається тільки з Telegram-бота.</h1>
+          <h1>This dashboard can only be opened from the Telegram bot.</h1>
           <p>
-            Запусти бота, натисни кнопку меню або команду <code>/start</code> і відкрий Mini App звідти.
+            Open the bot, tap the menu button or use <code>/start</code>, then launch the Mini App from there.
           </p>
           {authError ? <p className="errorText">{authError}</p> : null}
         </section>

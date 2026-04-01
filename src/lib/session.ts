@@ -1,11 +1,12 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const SESSION_TTL_SECONDS = 60 * 60 * 12;
+export const BROWSER_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 export interface SessionPayload {
   authAt: number;
   exp: number;
-  mode: 'development' | 'telegram';
+  mode: 'browser' | 'development' | 'telegram';
   tgUserId: string;
 }
 

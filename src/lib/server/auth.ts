@@ -2,7 +2,9 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { assertProductionEnv, sessionSecret } from '../../config/env';
+import { BROWSER_CHALLENGE_COOKIE_NAME } from '../browser-auth';
 import {
+  BROWSER_SESSION_TTL_SECONDS,
   createSession,
   SESSION_TTL_SECONDS,
   type SessionPayload,
@@ -23,7 +25,6 @@ export class SessionError extends Error {
 function buildCookieOptions() {
   return {
     httpOnly: true,
-    maxAge: SESSION_TTL_SECONDS,
     path: '/',
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production'
@@ -32,19 +33,23 @@ function buildCookieOptions() {
 
 export function attachSessionCookie(
   response: NextResponse,
-  payload: Omit<SessionPayload, 'exp'>
+  payload: Omit<SessionPayload, 'exp'>,
+  ttlSeconds = SESSION_TTL_SECONDS
 ): void {
   assertProductionEnv();
 
   const session = createSession(
     {
       ...payload,
-      exp: payload.authAt + SESSION_TTL_SECONDS
+      exp: payload.authAt + ttlSeconds
     },
     sessionSecret
   );
 
-  response.cookies.set(SESSION_COOKIE_NAME, session, buildCookieOptions());
+  response.cookies.set(SESSION_COOKIE_NAME, session, {
+    ...buildCookieOptions(),
+    maxAge: ttlSeconds
+  });
 }
 
 export function clearSessionCookie(response: NextResponse): void {
@@ -66,4 +71,34 @@ export async function requireSession(): Promise<SessionPayload> {
   }
 
   return payload;
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+  assertProductionEnv();
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  return verifySession(token, sessionSecret);
+}
+
+export function buildBrowserSessionTtl(): number {
+  return BROWSER_SESSION_TTL_SECONDS;
+}
+
+export function attachBrowserChallengeCookie(
+  response: NextResponse,
+  token: string,
+  ttlSeconds: number
+): void {
+  response.cookies.set(BROWSER_CHALLENGE_COOKIE_NAME, token, {
+    ...buildCookieOptions(),
+    maxAge: ttlSeconds
+  });
+}
+
+export function clearBrowserChallengeCookie(response: NextResponse): void {
+  response.cookies.set(BROWSER_CHALLENGE_COOKIE_NAME, '', {
+    ...buildCookieOptions(),
+    maxAge: 0
+  });
 }

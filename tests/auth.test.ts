@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  BROWSER_OTP_TTL_SECONDS,
+  createBrowserChallenge,
+  hashBrowserOtpCode,
+  verifyBrowserChallenge
+} from '../src/lib/browser-auth';
+import {
+  BROWSER_SESSION_TTL_SECONDS,
   createSession,
   SESSION_TTL_SECONDS,
   verifySession
@@ -108,6 +115,28 @@ test('creates and verifies signed session cookies', () => {
   });
 });
 
+test('creates and verifies browser session cookies', () => {
+  const authAt = Math.floor(NOW / 1000);
+  const token = createSession(
+    {
+      authAt,
+      exp: authAt + BROWSER_SESSION_TTL_SECONDS,
+      mode: 'browser',
+      tgUserId: '489177683'
+    },
+    SESSION_SECRET
+  );
+
+  const payload = verifySession(token, SESSION_SECRET, NOW);
+
+  assert.deepEqual(payload, {
+    authAt,
+    exp: authAt + BROWSER_SESSION_TTL_SECONDS,
+    mode: 'browser',
+    tgUserId: '489177683'
+  });
+});
+
 test('rejects expired signed session cookies', () => {
   const authAt = Math.floor(NOW / 1000) - SESSION_TTL_SECONDS - 1;
   const token = createSession(
@@ -121,4 +150,42 @@ test('rejects expired signed session cookies', () => {
   );
 
   assert.equal(verifySession(token, SESSION_SECRET, NOW), null);
+});
+
+test('creates and verifies browser login challenge', () => {
+  const nowSeconds = Math.floor(NOW / 1000);
+  const token = createBrowserChallenge(
+    {
+      attempts: 0,
+      codeHash: hashBrowserOtpCode('123456', SESSION_SECRET),
+      exp: nowSeconds + BROWSER_OTP_TTL_SECONDS,
+      sentAt: nowSeconds,
+      tgUserId: '489177683'
+    },
+    SESSION_SECRET
+  );
+
+  assert.deepEqual(verifyBrowserChallenge(token, SESSION_SECRET, NOW), {
+    attempts: 0,
+    codeHash: hashBrowserOtpCode('123456', SESSION_SECRET),
+    exp: nowSeconds + BROWSER_OTP_TTL_SECONDS,
+    sentAt: nowSeconds,
+    tgUserId: '489177683'
+  });
+});
+
+test('rejects expired browser login challenge', () => {
+  const nowSeconds = Math.floor(NOW / 1000);
+  const token = createBrowserChallenge(
+    {
+      attempts: 0,
+      codeHash: hashBrowserOtpCode('123456', SESSION_SECRET),
+      exp: nowSeconds - 1,
+      sentAt: nowSeconds - 60,
+      tgUserId: '489177683'
+    },
+    SESSION_SECRET
+  );
+
+  assert.equal(verifyBrowserChallenge(token, SESSION_SECRET, NOW), null);
 });

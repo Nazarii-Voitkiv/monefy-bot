@@ -2,7 +2,9 @@ export type CurrencyCode = 'USD' | 'PLN' | 'UAH';
 
 export type CategoryKind = 'income' | 'expense';
 export type DashboardPeriod = 'today' | 'week' | 'month' | 'last30';
-export type ClientTab = 'overview' | 'history';
+export type TransactionTypeFilter = 'all' | 'income' | 'expense';
+export type TransactionSortBy = 'date' | 'amount' | 'amountUsd' | 'category' | 'currency';
+export type SortOrder = 'asc' | 'desc';
 
 export interface TransactionInput {
   tgUserId: string;
@@ -34,6 +36,13 @@ export interface FrontendTransaction {
   isRateApprox: boolean;
 }
 
+export interface FrontendCategory {
+  id: number;
+  kind: CategoryKind;
+  name: string;
+  usageCount: number;
+}
+
 export interface DashboardSummary {
   totalUsd: number;
   incomesUsd: number;
@@ -47,14 +56,31 @@ export interface CategoryBreakdownItem {
 
 export interface DashboardResponse {
   generatedAt: string;
-  period: DashboardPeriod;
+  period: DashboardPeriod | null;
   rangeLabel: string;
   summary: DashboardSummary;
+  totalTransactions: number;
   breakdown: {
     incomes: CategoryBreakdownItem[];
     expenses: CategoryBreakdownItem[];
   };
   recentTransactions: FrontendTransaction[];
+}
+
+export interface TransactionsQuery {
+  amountMax?: number;
+  amountMin?: number;
+  categoryId?: number;
+  currency?: CurrencyCode;
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+  page?: number;
+  period?: DashboardPeriod;
+  search?: string;
+  sortBy?: TransactionSortBy;
+  sortOrder?: SortOrder;
+  type?: TransactionTypeFilter;
 }
 
 export interface TransactionsResponse {
@@ -63,4 +89,8 @@ export interface TransactionsResponse {
   page: number;
   total: number;
   totalPages: number;
+}
+
+export interface CategoriesResponse {
+  items: FrontendCategory[];
 }

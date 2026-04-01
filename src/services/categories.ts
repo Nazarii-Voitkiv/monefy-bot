@@ -19,6 +19,10 @@ export interface CategoryRecord {
   kind: CategoryKind;
 }
 
+export interface CategoryWithUsage extends CategoryRecord {
+  usageCount: number;
+}
+
 function getCacheKey(tgUserId: string): string {
   return `categories:${tgUserId}`;
 }
@@ -91,6 +95,36 @@ export async function listCategories(tgUserId: string): Promise<CategoryRecord[]
   return result;
 }
 
+export async function listCategoriesWithUsage(
+  tgUserId: string
+): Promise<CategoryWithUsage[]> {
+  const [categories, usageRows] = await Promise.all([
+    listCategories(tgUserId),
+    supabase
+      .from('transactions')
+      .select('category_id')
+      .eq('tg_user_id', tgUserId)
+  ]);
+
+  const usageResult = usageRows;
+  if (usageResult.error) {
+    throw usageResult.error;
+  }
+
+  const usageByCategoryId = new Map<number, number>();
+  for (const row of (usageResult.data || []) as Array<{ category_id: number }>) {
+    usageByCategoryId.set(
+      row.category_id,
+      (usageByCategoryId.get(row.category_id) ?? 0) + 1
+    );
+  }
+
+  return categories.map((category) => ({
+    ...category,
+    usageCount: usageByCategoryId.get(category.id) ?? 0
+  }));
+}
+
 export async function getCategoryByName(
   tgUserId: string,
   name: string,
@@ -104,6 +138,96 @@ export async function getCategoryByName(
   const r = data && data[0];
   if (!r) return undefined;
   return { id: r.id, name: r.name, tgUserId: r.tg_user_id, kind: r.kind };
+}
+
+export async function getCategoryById(
+  tgUserId: string,
+  id: number
+): Promise<CategoryRecord | undefined> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, tg_user_id, name, kind')
+    .eq('tg_user_id', tgUserId)
+    .eq('id', id)
+    .limit(1);
+
+  if (error) throw error;
+
+  const row = data?.[0];
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    id: row.id,
+    kind: row.kind,
+    name: row.name,
+    tgUserId: row.tg_user_id
+  };
+}
+
+export async function renameCategory(
+  tgUserId: string,
+  id: number,
+  name: string
+): Promise<CategoryRecord> {
+  const normalized = name.trim().toLowerCase();
+  const existing = await getCategoryByName(tgUserId, normalized);
+  if (existing && existing.id !== id) {
+    throw new Error('Category with this name already exists');
+  }
+
+  const { data, error } = await supabase
+    .from('categories')
+    .update({ name: normalized })
+    .eq('tg_user_id', tgUserId)
+    .eq('id', id)
+    .select('id, tg_user_id, name, kind')
+    .single();
+
+  if (error) throw error;
+  categoryCache.del(getCacheKey(tgUserId));
+
+  return {
+    id: data.id,
+    kind: data.kind,
+    name: data.name,
+    tgUserId: data.tg_user_id
+  };
+}
+
+export async function countTransactionsForCategory(
+  tgUserId: string,
+  categoryId: number
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('tg_user_id', tgUserId)
+    .eq('category_id', categoryId);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function removeCategoryById(
+  tgUserId: string,
+  id: number
+): Promise<boolean> {
+  const usageCount = await countTransactionsForCategory(tgUserId, id);
+  if (usageCount > 0) {
+    throw new Error('Category cannot be deleted while it still has transactions');
+  }
+
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('tg_user_id', tgUserId)
+    .eq('id', id);
+
+  if (error) throw error;
+  categoryCache.del(getCacheKey(tgUserId));
+  return true;
 }
 
 export async function removeCategory(tgUserId: string, name: string): Promise<number> {

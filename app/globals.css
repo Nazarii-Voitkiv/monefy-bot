@@ -1,16 +1,16 @@
 :root {
   --font-display: 'Fraunces', serif;
   --font-body: 'IBM Plex Sans', sans-serif;
-  --app-bg: #f4efe6;
-  --panel-bg: rgba(255, 251, 245, 0.86);
-  --panel-border: rgba(78, 57, 33, 0.12);
-  --panel-shadow: 0 24px 80px rgba(92, 63, 37, 0.14);
-  --text-main: #22170d;
-  --text-muted: rgba(34, 23, 13, 0.62);
-  --accent: #a96a2b;
-  --accent-soft: rgba(169, 106, 43, 0.12);
+  --app-bg: #f6efe4;
+  --panel-bg: rgba(255, 250, 244, 0.92);
+  --panel-border: rgba(92, 67, 40, 0.12);
+  --panel-shadow: 0 18px 60px rgba(92, 63, 37, 0.12);
+  --text-main: #1f160e;
+  --text-muted: rgba(31, 22, 14, 0.66);
+  --accent: #4d7ce8;
+  --accent-soft: rgba(77, 124, 232, 0.12);
   --positive: #0d7a53;
-  --negative: #b7492c;
+  --negative: #ba4735;
   --tg-safe-top: 0px;
   --tg-safe-bottom: 0px;
 }
@@ -27,9 +27,9 @@ body {
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 38%),
-    radial-gradient(circle at top right, rgba(242, 211, 175, 0.42), transparent 28%),
-    linear-gradient(180deg, #f9f3ea 0%, #efe7db 55%, #eadfce 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.88), transparent 34%),
+    radial-gradient(circle at top right, rgba(235, 208, 171, 0.38), transparent 28%),
+    linear-gradient(180deg, #fbf6ee 0%, #efe6d9 58%, #e8dbc8 100%);
   color: var(--text-main);
   font-family: var(--font-body);
 }
@@ -41,6 +41,10 @@ textarea {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -48,13 +52,24 @@ a {
 
 .shell {
   margin: 0 auto;
-  max-width: 960px;
   min-height: 100vh;
   padding: calc(28px + var(--tg-safe-top)) 18px calc(32px + var(--tg-safe-bottom));
 }
 
+.authShell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  max-width: 840px;
+}
+
+.adminShell {
+  max-width: 1380px;
+}
+
 .heroCard,
-.panel {
+.panel,
+.modalCard {
   backdrop-filter: blur(18px);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
@@ -62,31 +77,38 @@ a {
   box-shadow: var(--panel-shadow);
 }
 
-.heroCard {
-  overflow: hidden;
-  padding: 28px;
-  position: relative;
+.heroCard,
+.panel,
+.modalCard {
+  padding: 24px;
 }
 
-.heroCard::after {
-  background: linear-gradient(135deg, rgba(169, 106, 43, 0.18), transparent 55%);
-  content: '';
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
+.authCard {
+  max-width: 560px;
+  width: 100%;
 }
 
-.heroRow {
-  align-items: center;
+.adminHero {
+  align-items: flex-end;
   display: flex;
   gap: 16px;
   justify-content: space-between;
 }
 
+.heroHeading p {
+  margin-top: 12px;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .eyebrow {
   color: var(--accent);
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   margin-bottom: 12px;
@@ -101,10 +123,12 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.2rem, 7vw, 4.1rem);
-  line-height: 0.95;
-  margin-bottom: 12px;
-  max-width: 10ch;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  line-height: 0.98;
+}
+
+h3 {
+  font-size: 1.4rem;
 }
 
 p {
@@ -113,39 +137,28 @@ p {
   margin: 0;
 }
 
-.tabPills,
-.periodChips,
-.pager {
+.sectionHeading {
+  align-items: flex-start;
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 18px;
 }
 
-.tabPills button,
-.periodChips button,
-.pager button,
-.primaryButton {
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(34, 23, 13, 0.08);
-  border-radius: 999px;
-  color: var(--text-main);
-  cursor: pointer;
-  font-weight: 600;
-  padding: 10px 16px;
+.sectionHeading span {
+  color: var(--text-muted);
+  font-size: 0.92rem;
 }
 
-.tabPills button.isActive,
-.periodChips button.isActive,
-.primaryButton {
-  background: var(--text-main);
-  color: #fff7ee;
+.summaryPanel,
+.panel {
+  margin-top: 18px;
 }
 
 .summaryGrid {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 18px 0;
 }
 
 .summaryCard {
@@ -167,142 +180,268 @@ p {
   letter-spacing: -0.04em;
 }
 
-.tone-positive strong {
+.tone-positive strong,
+.positiveText {
   color: var(--positive);
 }
 
-.tone-negative strong {
+.tone-negative strong,
+.negativeText {
   color: var(--negative);
 }
 
-.filterPanel,
-.historyPanel,
-.panel {
-  margin-top: 18px;
-  padding: 22px;
-}
-
-.sectionHeading {
-  align-items: baseline;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.sectionHeading span {
-  color: var(--text-muted);
-  font-size: 0.92rem;
-}
-
-.twoColumn {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 18px;
-}
-
-.bars {
+.filterLayout,
+.formGrid {
   display: grid;
   gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.filterGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.filterGroup.wide {
+  grid-column: span 2;
+}
+
+.filterGroup label {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.textInput,
+select,
+textarea {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(31, 22, 14, 0.12);
+  border-radius: 16px;
+  color: var(--text-main);
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+.textArea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.toolbar,
+.periodChips,
+.authActions,
+.pager,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toolbar {
+  margin-top: 18px;
+}
+
+.periodChips button,
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.pager button {
+  border: 1px solid rgba(31, 22, 14, 0.08);
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 10px 16px;
+}
+
+.periodChips button,
+.secondaryButton,
+.pager button {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-main);
+}
+
+.periodChips button.isActive,
+.primaryButton {
+  background: var(--text-main);
+  color: #fff8ef;
+}
+
+.dangerButton {
+  background: rgba(186, 71, 53, 0.08);
+  border-color: rgba(186, 71, 53, 0.18);
+  color: var(--negative);
+}
+
+.dangerButton:disabled,
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.adminGrid,
+.breakdownGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
+  margin-top: 18px;
+}
+
+.breakdownGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transactionsTable,
+.categoryList,
+.bars {
+  display: grid;
+  gap: 12px;
+}
+
+.transactionCard,
+.categoryRow {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 22, 14, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.transactionCardMain,
+.categoryRow {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.transactionCard strong,
+.categoryInfo strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.transactionCardAmount {
+  text-align: right;
+}
+
+.transactionCardAmount span,
+.transactionCardAmount small {
+  display: block;
+}
+
+.transactionMeta {
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.categoryComposer {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) auto;
+  margin-bottom: 16px;
+}
+
+.categoryInfo {
+  min-width: 0;
 }
 
 .barMeta {
   display: flex;
-  justify-content: space-between;
   gap: 12px;
+  justify-content: space-between;
   margin-bottom: 8px;
 }
 
-.barMeta span {
-  color: var(--text-muted);
-}
-
 .barTrack {
-  background: rgba(34, 23, 13, 0.08);
+  background: rgba(31, 22, 14, 0.08);
   border-radius: 999px;
   height: 10px;
   overflow: hidden;
 }
 
 .barFill {
-  background: linear-gradient(90deg, var(--accent), #d9944e);
+  background: linear-gradient(90deg, var(--accent), #7ca4ff);
   border-radius: inherit;
   height: 100%;
 }
 
-.transactions {
-  display: grid;
-  gap: 12px;
-}
-
-.transactionRow {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(34, 23, 13, 0.07);
-  border-radius: 20px;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
-}
-
-.transactionRow p {
-  color: var(--text-main);
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.transactionRow span {
+.notice,
+.emptyState {
   color: var(--text-muted);
-  font-size: 0.92rem;
+  margin-top: 14px;
 }
 
-.transactionAmount {
-  text-align: right;
+.notice {
+  border-radius: 16px;
+  padding: 12px 14px;
 }
 
-.transactionAmount strong {
-  display: block;
-}
-
-.transactionAmount.positive strong {
+.notice.success {
+  background: rgba(13, 122, 83, 0.08);
   color: var(--positive);
 }
 
-.transactionAmount.negative strong {
+.notice.error {
+  background: rgba(186, 71, 53, 0.08);
   color: var(--negative);
 }
 
-.emptyState,
-.errorText {
-  color: var(--text-muted);
+.modalBackdrop {
+  align-items: center;
+  background: rgba(22, 15, 10, 0.3);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+}
+
+.modalCard {
+  max-height: calc(100vh - 36px);
+  max-width: 760px;
+  overflow: auto;
+  width: 100%;
 }
 
 code {
-  background: rgba(34, 23, 13, 0.08);
+  background: rgba(31, 22, 14, 0.08);
   border-radius: 8px;
   padding: 0.15rem 0.4rem;
 }
 
-@media (max-width: 720px) {
-  .heroRow,
+@media (max-width: 1100px) {
+  .adminGrid,
+  .breakdownGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .summaryGrid,
+  .filterLayout,
+  .formGrid,
+  .categoryComposer {
+    grid-template-columns: 1fr;
+  }
+
+  .filterGroup.wide {
+    grid-column: span 1;
+  }
+
+  .adminHero,
   .sectionHeading,
-  .transactionRow {
+  .transactionCardMain,
+  .categoryRow {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .summaryGrid,
-  .twoColumn {
-    grid-template-columns: 1fr;
-  }
-
-  .transactionAmount {
+  .transactionCardAmount {
     text-align: left;
-  }
-
-  h1 {
-    max-width: 100%;
   }
 }

@@ -54,6 +54,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const response = NextResponse.json({
+      mode,
       ok: true,
       user: {
         id: sessionUserId,

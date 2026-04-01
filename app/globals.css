@@ -238,6 +238,26 @@ textarea {
   resize: vertical;
 }
 
+input[type='date'],
+input[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: 100%;
+  min-inline-size: 0;
+  width: 100%;
+}
+
+input[type='date']::-webkit-date-and-time-value,
+input[type='datetime-local']::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  margin: 0;
+}
+
 .toolbar,
 .periodChips,
 .pager,

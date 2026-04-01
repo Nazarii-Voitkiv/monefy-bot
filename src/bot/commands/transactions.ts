@@ -1,13 +1,13 @@
 import { message } from 'telegraf/filters';
 
-import type { BotContext } from '../context.js';
-import { formatCurrency, formatUsd } from '../helpers/format.js';
-import { parseTransactionInput, ParseError } from '../helpers/parser.js';
-import { requireCategory } from '../../services/categories.js';
-import { fxProvider } from '../../services/fxProvider.js';
-import { createTransaction } from '../../services/transactions.js';
-import { handleTransactionEdit } from './history.js';
-import { userState } from '../state.js';
+import { requireCategory } from '../../services/categories';
+import { fxProvider } from '../../services/fxProvider';
+import { createTransaction } from '../../services/transactions';
+import type { BotContext } from '../context';
+import { formatCurrency, formatUsd } from '../helpers/format';
+import { ParseError,parseTransactionInput } from '../helpers/parser';
+import { userState } from '../state';
+import { handleTransactionEdit } from './history';
 
 const SIGN_KIND_MAP = {
   1: 'income',

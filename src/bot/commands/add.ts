@@ -1,6 +1,6 @@
 import type { Telegraf } from 'telegraf';
 
-import type { BotContext } from '../context.js';
+import type { BotContext } from '../context';
 
 export function registerAddHelp(bot: Telegraf<BotContext>): void {
   bot.command('add', async (ctx) => {

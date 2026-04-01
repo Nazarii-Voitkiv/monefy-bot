@@ -1,7 +1,7 @@
 import type { Telegraf } from 'telegraf';
 
-import type { BotContext } from '../context.js';
-import { fxProvider } from '../../services/fxProvider.js';
+import { fxProvider } from '../../services/fxProvider';
+import type { BotContext } from '../context';
 
 export function registerRateCommand(bot: Telegraf<BotContext>): void {
   bot.command('rate', async (ctx) => {

@@ -1,6 +1,6 @@
-import type { BotMiddleware } from '../context.js';
-import { ensureDefaultCategories, listCategories } from '../../services/categories.js';
-import { ensureUser } from '../../services/users.js';
+import { ensureDefaultCategories, listCategories } from '../../services/categories';
+import { ensureUser } from '../../services/users';
+import type { BotMiddleware } from '../context';
 
 export const ensureUserMiddleware: BotMiddleware = async (ctx, next) => {
   const tgUserId = ctx.from?.id?.toString();

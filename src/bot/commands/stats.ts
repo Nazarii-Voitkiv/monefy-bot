@@ -1,8 +1,7 @@
 import { differenceInCalendarDays } from 'date-fns';
 import type { Telegraf } from 'telegraf';
 
-import type { BotContext } from '../context.js';
-import { formatUsd } from '../helpers/format.js';
+import { getCategoryBreakdown,getSummaryStats } from '../../services/reports';
 import {
   buildRangeBetween,
   buildRangeForMonth,
@@ -11,8 +10,9 @@ import {
   buildRangeForWeek,
   formatDateLabel,
   formatRangeLabel
-} from '../../utils/date.js';
-import { getSummaryStats, getCategoryBreakdown } from '../../services/reports.js';
+} from '../../utils/date';
+import type { BotContext } from '../context';
+import { formatUsd } from '../helpers/format';
 
 async function replyWithStats(ctx: BotContext, label: string, from: Date, to: Date) {
   const user = ctx.state.user;

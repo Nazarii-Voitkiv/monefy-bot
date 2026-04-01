@@ -1,12 +1,12 @@
 import type { Telegraf } from 'telegraf';
 
-import type { BotContext } from '../context.js';
 import {
   addCategory,
   listCategories,
   removeCategory
-} from '../../services/categories.js';
-import type { CategoryKind } from '../../types/index.js';
+} from '../../services/categories';
+import type { CategoryKind } from '../../types/index';
+import type { BotContext } from '../context';
 
 function parseKind(kind?: string): CategoryKind | null {
   if (!kind) {

@@ -1,10 +1,13 @@
 .env
+.env.local
+.env.development.local
+.env.production.local
 node_modules
-dist
-db-data
+.next
+.vercel
 /.vscode
 /.idea
 npm-debug.log
-db_data
 src/.DS_Store
 .DS_Store
+coverage

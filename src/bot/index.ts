@@ -1,12 +1,14 @@
 import { Telegraf } from 'telegraf';
 
-import { env } from '../config/env.js';
-import type { BotContext } from './context.js';
-import { authorizeMiddleware } from './middlewares/authorize.js';
-import { ensureUserMiddleware } from './middlewares/ensureUser.js';
-import { registerBotCommands } from './commands/index.js';
+import { appBaseUrl, assertProductionEnv, env } from '../config/env';
+import { registerBotCommands } from './commands/index';
+import type { BotContext } from './context';
+import { authorizeMiddleware } from './middlewares/authorize';
+import { ensureUserMiddleware } from './middlewares/ensureUser';
 
 export async function createBot(): Promise<Telegraf<BotContext>> {
+  assertProductionEnv();
+
   const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
 
   bot.use(authorizeMiddleware);
@@ -30,7 +32,17 @@ export async function createBot(): Promise<Telegraf<BotContext>> {
       { command: 'history', description: 'Історія транзакцій' }
     ]);
 
-    await bot.telegram.setChatMenuButton({ menuButton: { type: 'commands' } });
+    if (appBaseUrl) {
+      await bot.telegram.setChatMenuButton({
+        menuButton: {
+          text: 'Відкрити дашборд',
+          type: 'web_app',
+          web_app: { url: appBaseUrl }
+        }
+      });
+    } else {
+      await bot.telegram.setChatMenuButton({ menuButton: { type: 'commands' } });
+    }
 
   } catch (err) {
     console.error('Failed to set bot commands via Telegram API:', err);

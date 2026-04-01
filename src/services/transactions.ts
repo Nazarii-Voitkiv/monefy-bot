@@ -1,6 +1,6 @@
-import { supabase } from '../db/client.js';
-import type { CategoryRecord } from './categories.js';
-import type { FxRate, FxProvider } from './fxProvider.js';
+import { supabase } from '../db/client';
+import type { CategoryRecord } from './categories';
+import type { FxProvider,FxRate } from './fxProvider';
 
 export interface CreateTransactionArgs {
   tgUserId: string;

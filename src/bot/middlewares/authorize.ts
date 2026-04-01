@@ -1,5 +1,5 @@
-import type { BotMiddleware } from '../context.js';
-import { allowedUserIds } from '../../config/env.js';
+import { allowedUserIds } from '../../config/env';
+import type { BotMiddleware } from '../context';
 
 const allowedIdsSet = new Set(allowedUserIds);
 

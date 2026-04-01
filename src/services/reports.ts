@@ -1,5 +1,5 @@
-import { supabase } from '../db/client.js';
-import type { StatsRange } from '../types/index.js';
+import { supabase } from '../db/client';
+import type { StatsRange } from '../types/index';
 
 export interface SummaryStats {
   totalUsd: number;
@@ -100,7 +100,6 @@ export async function getCategoryBreakdown(
 
   if (error) throw error;
 
-  const sumsBySign: Record<number, number> = {};
   const sumsBySignExpenses: Record<number, number> = {};
   const sumsBySignIncomes: Record<number, number> = {};
 

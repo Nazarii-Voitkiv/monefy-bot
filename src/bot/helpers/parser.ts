@@ -1,5 +1,5 @@
-import type { CurrencyCode } from '../../types/index.js';
-import { parseDateTag } from '../../utils/date.js';
+import type { CurrencyCode } from '../../types/index';
+import { parseDateTag } from '../../utils/date';
 
 const INPUT_REGEX =
   /^([+-]?)\s*(\d+(?:[.,]\d{1,2})?)\s*(PLN|UAH|USD)?\s*(@\d{4}-\d{2}-\d{2})?\s*(.*)$/i;

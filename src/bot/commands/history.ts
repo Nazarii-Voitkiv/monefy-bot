@@ -1,18 +1,12 @@
-import { Markup } from 'telegraf';
-import { supabase } from '../../db/client.js';
 import { format } from 'date-fns';
+import { Markup } from 'telegraf';
 
-import type { BotContext } from '../context.js';
-import { formatCurrency, formatUsd } from '../helpers/format.js';
-import { userState, UserStateType } from '../state.js';
-import {
-    deleteTransaction,
-    getTransactions,
-    TransactionRecord,
-    updateTransaction
-} from '../../services/transactions.js';
-import { listCategories } from '../../services/categories.js';
-import { fxProvider } from '../../services/fxProvider.js';
+import { supabase } from '../../db/client';
+import { listCategories } from '../../services/categories';
+import { fxProvider } from '../../services/fxProvider';
+import { deleteTransaction, getTransactions, updateTransaction } from '../../services/transactions';
+import type { BotContext } from '../context';
+import { userState, UserStateType } from '../state';
 
 const PAGE_SIZE = 10;
 
@@ -171,33 +165,6 @@ async function sendHistoryPage(ctx: BotContext, page: number, isEdit = false) {
 async function sendTransactionDetails(ctx: BotContext, id: number) {
     const user = ctx.state.user!;
     try {
-        const { data: txns } = await getTransactions(user.tgUserId, 1, 100); // We need a better way to get single txn by ID efficiently without writing new service method?
-        // Actually updateTransaction fetches by ID. We can add getTransactionById but for now let's reuse updateTransaction-like fetch or filtered list.
-        // Ideally we should add getTransaction(id, userId) to service.
-        // For now, let's just find it in the list or fetch specifically.
-        // Given usage, I should add getTransaction(id, userId) to service.
-        // But to save turn, I'll filter. If it's deep in history, this is bad.
-        // I will assume I can fetch it via getTransactions with high limit? No, that's bad.
-        // Use updateTransaction to "fetch" it? No.
-        // I will add getTransactionById to service later? Or just use getTransactions logic?
-        // Let's rely on simple `transactions.ts` exporting `getTransaction`.
-        // Wait, I didn't verify `getTransaction(id)` exists.
-        // I updated `transactions.ts` to include `updateTransaction` which does fetching.
-        // I can just assume I can implement `getTransaction` quickly or use a direct DB call here if I import supabase?
-        // Better: export `getTransaction` from `src / services / transactions.ts`.
-        // I will fix `transactions.ts` in dynamic fix step if needed.
-        // For now, I will use `updateTransaction` logic... NO.
-        // I'll skip DB fetch if I can pass data? No.
-        // I'll add `getTransaction` to service in next step.
-
-        // TEMPORARY: using getTransactions(limit=1000) is unsafe but works for now for small users?? 
-        // No, I'll update transactions.ts properly.
-        // But I can't do it in this file write.
-        // I'll just write `getTransaction` call and assume I'll add it.
-
-        // Wait, let's pause writing this file until I add `getTransaction` to service.
-        // Or I can inline the supabase call here since I can import supabase.
-        // I'll import supabase.
         const { data, error } = await supabase
             .from('transactions')
             .select('*')
@@ -262,14 +229,14 @@ export async function handleTransactionEdit(ctx: BotContext, state: UserStateTyp
         }
 
         try {
-            const updated = await updateTransaction(state.txnId, ctx.state.user!.tgUserId, { amount }, fxProvider);
-            await ctx.reply(`✅ Суму оновлено: ${updated.amount} ${updated.currency} `);
+            await updateTransaction(state.txnId, ctx.state.user!.tgUserId, { amount }, fxProvider);
+            await ctx.reply(`✅ Суму оновлено: ${amount}`);
         } catch (e) {
             await ctx.reply(`Помилка оновлення: ${(e as Error).message} `);
         }
     } else if (state.type === 'EDIT_TXN_NOTE') {
         try {
-            const updated = await updateTransaction(state.txnId, ctx.state.user!.tgUserId, { note: text }, fxProvider);
+            await updateTransaction(state.txnId, ctx.state.user!.tgUserId, { note: text }, fxProvider);
             await ctx.reply(`✅ Нотатку оновлено.`);
         } catch (e) {
             await ctx.reply(`Помилка оновлення: ${(e as Error).message} `);

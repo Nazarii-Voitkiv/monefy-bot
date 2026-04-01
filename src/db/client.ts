@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { env } from '../config/env.js';
+
+import { env } from '../config/env';
 
 if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
   throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be provided in environment');

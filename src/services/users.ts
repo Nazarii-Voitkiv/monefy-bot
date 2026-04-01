@@ -1,7 +1,7 @@
 import NodeCache from 'node-cache';
 
-import { env } from '../config/env.js';
-import { supabase } from '../db/client.js';
+import { env } from '../config/env';
+import { supabase } from '../db/client';
 
 const userCache = new NodeCache({ stdTTL: 3600 }); // 1 hour cache for user profile
 

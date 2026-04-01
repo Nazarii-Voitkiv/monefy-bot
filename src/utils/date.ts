@@ -51,6 +51,13 @@ export function buildRangeForMonth(now: Date): { from: Date; to: Date } {
   };
 }
 
+export function buildRangeForLast30Days(now: Date): { from: Date; to: Date } {
+  return {
+    from: startOfDay(subDays(now, 29)),
+    to: endOfDay(now)
+  };
+}
+
 export function buildRangeForMonthString(month: string): { from: Date; to: Date } {
   const parsed = parseISO(`${month}-01`);
   return {

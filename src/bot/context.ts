@@ -1,7 +1,7 @@
 import type { Context, MiddlewareFn } from 'telegraf';
 
-import type { CategoryRecord } from '../services/categories.js';
-import type { UserRecord } from '../services/users.js';
+import type { CategoryRecord } from '../services/categories';
+import type { UserRecord } from '../services/users';
 
 export interface BotState {
   user?: UserRecord;

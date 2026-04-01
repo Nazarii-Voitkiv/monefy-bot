@@ -1,7 +1,7 @@
 import NodeCache from 'node-cache';
 
-import { env } from '../config/env.js';
-import { supabase } from '../db/client.js';
+import { env } from '../config/env';
+import { supabase } from '../db/client';
 
 const cache = new NodeCache({ stdTTL: 60 * 60 });
 
@@ -164,7 +164,7 @@ async function fetchFallbackRate(targetDate: string, originalError: Error): Prom
       rateDate: targetDate,
       isApprox: true
     };
-  } catch (fallbackError) {
+  } catch {
     throw originalError;
   }
 }

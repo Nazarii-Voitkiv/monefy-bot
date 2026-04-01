@@ -1,6 +1,7 @@
 import NodeCache from 'node-cache';
-import { supabase } from '../db/client.js';
-import type { CategoryKind } from '../types/index.js';
+
+import { supabase } from '../db/client';
+import type { CategoryKind } from '../types/index';
 
 const categoryCache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
 

@@ -209,6 +209,7 @@ function DailyFlowChart({
     ...items.flatMap((item) => [item.expensesUsd, item.incomesUsd]),
     1
   );
+  const labelStep = items.length > 20 ? 4 : items.length > 12 ? 3 : items.length > 8 ? 2 : 1;
 
   const toY = (value: number): number =>
     paddingTop + chartHeight - (value / maxValue) * chartHeight;
@@ -231,7 +232,6 @@ function DailyFlowChart({
       <div className="sectionHeading">
         <div>
           <h3>Графік по днях</h3>
-          <span>Щоденний рух доходів і витрат у вибраному періоді.</span>
         </div>
       </div>
 
@@ -272,9 +272,15 @@ function DailyFlowChart({
                 <g key={item.date}>
                   <circle className="chartPoint incomePoint" cx={toX(index)} cy={toY(item.incomesUsd)} r="4" />
                   <circle className="chartPoint expensePoint" cx={toX(index)} cy={toY(item.expensesUsd)} r="4" />
-                  <text className="chartLabel" textAnchor="middle" x={toX(index)} y={height - 12}>
-                    {item.date.slice(5)}
-                  </text>
+                  {index % labelStep === 0 || index === items.length - 1 ? (
+                    <text
+                      className="chartLabel"
+                      textAnchor="end"
+                      transform={`translate(${toX(index)} ${height - 10}) rotate(-35)`}
+                    >
+                      {item.date.slice(5)}
+                    </text>
+                  ) : null}
                 </g>
               ))}
             </svg>

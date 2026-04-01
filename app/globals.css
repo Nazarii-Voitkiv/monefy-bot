@@ -438,7 +438,7 @@ textarea {
 .chartLabel {
   fill: var(--text-muted);
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .chartTotals {

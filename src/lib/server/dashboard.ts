@@ -11,6 +11,7 @@ import {
 import type {
   CategoriesResponse,
   CategoryBreakdownItem,
+  DailySeriesPoint,
   DashboardPeriod,
   DashboardResponse,
   FrontendCategory,
@@ -154,6 +155,35 @@ function buildBreakdown(
     .sort((left, right) => right.total - left.total);
 }
 
+function buildDailySeries(items: FrontendTransaction[]): DailySeriesPoint[] {
+  const points = new Map<string, DailySeriesPoint>();
+
+  for (const item of items) {
+    const date = item.txnAt.slice(0, 10);
+    const current = points.get(date) ?? {
+      date,
+      expensesUsd: 0,
+      incomesUsd: 0
+    };
+
+    if (item.sign === 1) {
+      current.incomesUsd += Math.abs(item.amountUsd);
+    } else {
+      current.expensesUsd += Math.abs(item.amountUsd);
+    }
+
+    points.set(date, current);
+  }
+
+  return Array.from(points.values())
+    .map((point) => ({
+      date: point.date,
+      expensesUsd: Number(point.expensesUsd.toFixed(2)),
+      incomesUsd: Number(point.incomesUsd.toFixed(2))
+    }))
+    .sort((left, right) => left.date.localeCompare(right.date));
+}
+
 function paginateItems<T>(
   items: T[],
   page: number,
@@ -201,6 +231,7 @@ export async function buildDashboardData(
       expenses: buildBreakdown(sorted, -1),
       incomes: buildBreakdown(sorted, 1)
     },
+    dailySeries: buildDailySeries(sorted),
     generatedAt: new Date().toISOString(),
     period: filters.period ?? null,
     rangeLabel: getRangeLabel(filters),

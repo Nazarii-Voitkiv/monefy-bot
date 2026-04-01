@@ -193,74 +193,99 @@ function SummaryCard({
   );
 }
 
-function ExpenseDonutChart({
-  items,
-  total
+function DailyFlowChart({
+  items
 }: {
-  items: DashboardResponse['breakdown']['expenses'];
-  total: number;
+  items: DashboardResponse['dailySeries'];
 }) {
-  const palette = ['#4d7ce8', '#0d7a53', '#ba4735', '#b8860b', '#6c5ce7', '#0f766e'];
-  const radius = 70;
-  const circumference = 2 * Math.PI * radius;
-  let offset = 0;
+  const width = 860;
+  const height = 240;
+  const paddingX = 24;
+  const paddingTop = 20;
+  const paddingBottom = 40;
+  const chartHeight = height - paddingTop - paddingBottom;
+  const chartWidth = width - paddingX * 2;
+  const maxValue = Math.max(
+    ...items.flatMap((item) => [item.expensesUsd, item.incomesUsd]),
+    1
+  );
+
+  const toY = (value: number): number =>
+    paddingTop + chartHeight - (value / maxValue) * chartHeight;
+
+  const toX = (index: number): number =>
+    items.length === 1
+      ? width / 2
+      : paddingX + (index / (items.length - 1)) * chartWidth;
+
+  const incomesPath = items
+    .map((item, index) => `${index === 0 ? 'M' : 'L'} ${toX(index)} ${toY(item.incomesUsd)}`)
+    .join(' ');
+
+  const expensesPath = items
+    .map((item, index) => `${index === 0 ? 'M' : 'L'} ${toX(index)} ${toY(item.expensesUsd)}`)
+    .join(' ');
 
   return (
     <section className="panel">
       <div className="sectionHeading">
         <div>
-          <h3>Діаграма витрат</h3>
-          <span>Розподіл витрат за категоріями у вибраному наборі фільтрів.</span>
+          <h3>Графік по днях</h3>
+          <span>Щоденний рух доходів і витрат у вибраному періоді.</span>
         </div>
       </div>
 
-      {items.length === 0 || total <= 0 ? (
-        <p className="emptyState">Ще немає витрат для побудови діаграми.</p>
+      {items.length === 0 ? (
+        <p className="emptyState">Ще немає даних для графіка.</p>
       ) : (
-        <div className="donutCard">
-          <div className="donutWrap" aria-label="Діаграма витрат">
-            <svg className="donutChart" viewBox="0 0 200 200" role="img">
-              <circle className="donutTrack" cx="100" cy="100" r={radius} />
-              {items.map((item, index) => {
-                const portion = item.total / total;
-                const dash = portion * circumference;
-                const currentOffset = offset;
-                offset += dash;
+        <div className="lineChartCard">
+          <div className="chartLegend">
+            <span className="legendChip income">Доходи</span>
+            <span className="legendChip expense">Витрати</span>
+          </div>
 
+          <div className="chartFrame">
+            <svg
+              aria-label="Графік руху по днях"
+              className="lineChart"
+              role="img"
+              viewBox={`0 0 ${width} ${height}`}
+            >
+              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+                const y = paddingTop + chartHeight - ratio * chartHeight;
                 return (
-                  <circle
-                    className="donutSegment"
-                    cx="100"
-                    cy="100"
-                    key={item.name}
-                    r={radius}
-                    stroke={palette[index % palette.length]}
-                    strokeDasharray={`${dash} ${circumference - dash}`}
-                    strokeDashoffset={-currentOffset}
+                  <line
+                    className="chartGridLine"
+                    key={ratio}
+                    x1={paddingX}
+                    x2={width - paddingX}
+                    y1={y}
+                    y2={y}
                   />
                 );
               })}
+
+              <path className="chartLine incomeLine" d={incomesPath} />
+              <path className="chartLine expenseLine" d={expensesPath} />
+
+              {items.map((item, index) => (
+                <g key={item.date}>
+                  <circle className="chartPoint incomePoint" cx={toX(index)} cy={toY(item.incomesUsd)} r="4" />
+                  <circle className="chartPoint expensePoint" cx={toX(index)} cy={toY(item.expensesUsd)} r="4" />
+                  <text className="chartLabel" textAnchor="middle" x={toX(index)} y={height - 12}>
+                    {item.date.slice(5)}
+                  </text>
+                </g>
+              ))}
             </svg>
-            <div className="donutCenter">
-              <strong>{formatMoney(total)}</strong>
-              <span>Витрати</span>
-            </div>
           </div>
 
-          <div className="donutLegend">
-            {items.map((item, index) => (
-              <div className="legendRow" key={item.name}>
-                <div className="legendMeta">
-                  <span
-                    className="legendSwatch"
-                    style={{ backgroundColor: palette[index % palette.length] }}
-                  />
-                  <strong>{item.name}</strong>
-                </div>
-                <div className="legendValues">
-                  <span>{formatMoney(item.total)}</span>
-                  <small>{((item.total / total) * 100).toFixed(1)}%</small>
-                </div>
+          <div className="chartTotals">
+            {items.map((item) => (
+              <div className="chartDayRow" key={`${item.date}-values`}>
+                <strong>{item.date}</strong>
+                <span className="positiveText">{formatMoney(item.incomesUsd)}</span>
+                <span className="negativeText">{formatMoney(item.expensesUsd)}</span>
               </div>
             ))}
           </div>
@@ -831,6 +856,7 @@ export function MiniAppShell() {
             value={dashboard ? formatMoney(dashboard.summary.totalUsd) : '...'}
           />
         </section>
+        {dashboard ? <DailyFlowChart items={dashboard.dailySeries} /> : null}
       </section>
 
       <section className="panel">
@@ -1208,10 +1234,6 @@ export function MiniAppShell() {
 
       {dashboard ? (
         <div className="breakdownGrid">
-          <ExpenseDonutChart
-            items={dashboard.breakdown.expenses}
-            total={dashboard.summary.expensesUsd}
-          />
           <section className="panel">
             <div className="sectionHeading">
               <h3>Доходи по категоріях</h3>

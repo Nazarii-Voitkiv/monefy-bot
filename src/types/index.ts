@@ -54,12 +54,19 @@ export interface CategoryBreakdownItem {
   total: number;
 }
 
+export interface DailySeriesPoint {
+  date: string;
+  expensesUsd: number;
+  incomesUsd: number;
+}
+
 export interface DashboardResponse {
   generatedAt: string;
   period: DashboardPeriod | null;
   rangeLabel: string;
   summary: DashboardSummary;
   totalTransactions: number;
+  dailySeries: DailySeriesPoint[];
   breakdown: {
     incomes: CategoryBreakdownItem[];
     expenses: CategoryBreakdownItem[];

@@ -244,6 +244,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 18px;
 }
 
 .toolbar {
@@ -358,85 +359,104 @@ textarea {
   min-width: 0;
 }
 
-.donutCard {
+.lineChartCard {
   display: grid;
   gap: 20px;
   grid-template-columns: 1fr;
 }
 
-.donutWrap {
-  display: grid;
-  place-items: center;
-  position: relative;
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.donutChart {
+.legendChip {
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
+.legendChip.income {
+  background: rgba(13, 122, 83, 0.1);
+  color: var(--positive);
+}
+
+.legendChip.expense {
+  background: rgba(186, 71, 53, 0.1);
+  color: var(--negative);
+}
+
+.chartFrame {
+  overflow-x: auto;
+}
+
+.lineChart {
   display: block;
-  height: 220px;
-  transform: rotate(-90deg);
-  width: 220px;
+  min-width: 720px;
+  width: 100%;
 }
 
-.donutTrack,
-.donutSegment {
+.chartGridLine {
+  stroke: rgba(31, 22, 14, 0.08);
+  stroke-width: 1;
+}
+
+.chartLine {
   fill: none;
   stroke-linecap: round;
-  stroke-width: 18;
+  stroke-linejoin: round;
+  stroke-width: 4;
 }
 
-.donutTrack {
-  stroke: rgba(31, 22, 14, 0.08);
+.incomeLine {
+  stroke: var(--positive);
 }
 
-.donutCenter {
-  display: grid;
-  inset: 50%;
-  place-items: center;
-  position: absolute;
-  text-align: center;
-  transform: translate(-50%, -50%);
+.expenseLine {
+  stroke: var(--negative);
 }
 
-.donutCenter strong {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
+.chartPoint {
+  stroke: #fff;
+  stroke-width: 2;
 }
 
-.donutCenter span,
-.legendValues small {
+.incomePoint {
+  fill: var(--positive);
+}
+
+.expensePoint {
+  fill: var(--negative);
+}
+
+.chartLabel,
+.chartTotals span {
   color: var(--text-muted);
 }
 
-.donutLegend {
+.chartLabel {
+  fill: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+.chartTotals {
   display: grid;
   gap: 10px;
 }
 
-.legendRow,
-.legendMeta,
-.legendValues {
+.chartDayRow {
   align-items: center;
+  border-top: 1px solid rgba(31, 22, 14, 0.08);
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: space-between;
+  padding-top: 10px;
 }
 
-.legendMeta {
-  justify-content: flex-start;
-}
-
-.legendValues {
-  flex-direction: column;
-  gap: 2px;
-  text-align: right;
-}
-
-.legendSwatch {
-  border-radius: 999px;
-  display: inline-block;
-  flex-shrink: 0;
-  height: 12px;
-  width: 12px;
+.chartDayRow strong {
+  font-size: 0.95rem;
 }
 
 .barMeta {

@@ -150,6 +150,10 @@ p {
   font-size: 0.92rem;
 }
 
+.sectionHeadingCompact {
+  margin-bottom: 0;
+}
+
 .summaryPanel,
 .panel {
   margin-top: 18px;
@@ -251,6 +255,13 @@ textarea {
   margin-top: 18px;
 }
 
+.mobileSection.isCollapsible .toolbar,
+.mobileSection.isCollapsible .filterLayout,
+.mobileSection.isCollapsible .categoryComposer,
+.mobileSection.isCollapsible .categoryList {
+  margin-top: 18px;
+}
+
 .periodChips button,
 .primaryButton,
 .secondaryButton,
@@ -273,6 +284,15 @@ textarea {
 .primaryButton {
   background: var(--text-main);
   color: #fff8ef;
+}
+
+.sectionToggle {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 22, 14, 0.08);
+  border-radius: 999px;
+  color: var(--text-main);
+  min-height: 40px;
+  padding: 8px 14px;
 }
 
 .dangerButton {
@@ -474,6 +494,23 @@ textarea {
   font-weight: 700;
 }
 
+.compactChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.compactChip {
+  background: rgba(77, 124, 232, 0.08);
+  border: 1px solid rgba(77, 124, 232, 0.12);
+  border-radius: 999px;
+  color: var(--text-main);
+  display: inline-flex;
+  font-size: 0.86rem;
+  padding: 7px 11px;
+}
+
 .barMeta {
   display: flex;
   gap: 12px;
@@ -585,6 +622,54 @@ code {
 }
 
 @media (max-width: 820px) {
+  .shell {
+    padding: calc(14px + var(--tg-safe-top)) 11px calc(18px + var(--tg-safe-bottom));
+  }
+
+  .heroCard,
+  .panel,
+  .modalCard {
+    border-radius: 22px;
+    padding: 17px;
+  }
+
+  .summaryPanel,
+  .panel,
+  .adminGrid,
+  .breakdownGrid {
+    margin-top: 12px;
+  }
+
+  .adminHero {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .heroHeading p {
+    margin-top: 6px;
+  }
+
+  .heroActions {
+    width: 100%;
+  }
+
+  .heroActions button {
+    width: 100%;
+  }
+
+  h1 {
+    font-size: clamp(1.85rem, 9vw, 2.5rem);
+  }
+
+  h3 {
+    font-size: 1.2rem;
+  }
+
+  .sectionHeading {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
   .summaryGrid,
   .filterLayout,
   .formGrid,
@@ -606,6 +691,47 @@ code {
 
   .transactionCardAmount {
     text-align: left;
+  }
+
+  .summaryCard {
+    border-radius: 20px;
+    padding: 14px 15px;
+  }
+
+  .summaryCard span {
+    margin-bottom: 8px;
+  }
+
+  .summaryCard strong {
+    font-size: 1.45rem;
+  }
+
+  .transactionCard,
+  .categoryRow {
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .transactionMeta {
+    gap: 4px 10px;
+    margin-top: 8px;
+  }
+
+  .rowActions,
+  .pager,
+  .toolbar {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .periodChips button,
+  .primaryButton,
+  .secondaryButton,
+  .dangerButton,
+  .pager button,
+  .sectionToggle {
+    min-height: 40px;
+    padding: 9px 14px;
   }
 
   .chartCanvas {

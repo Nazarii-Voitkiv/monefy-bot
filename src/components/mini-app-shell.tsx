@@ -305,6 +305,7 @@ function pickFirstCategory(
 
 export function MiniAppShell() {
   const [scriptReady, setScriptReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [authState, setAuthState] = useState<AuthState>('booting');
   const [authError, setAuthError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -327,11 +328,81 @@ export function MiniAppShell() {
   const [loginCode, setLoginCode] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [categoriesOpen, setCategoriesOpen] = useState(true);
 
   const categoriesById = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
     [categories]
   );
+  const activeFilterChips = useMemo(() => {
+    const chips: string[] = [];
+
+    if (filtersApplied.type !== 'all') {
+      chips.push(filtersApplied.type === 'income' ? 'Доходи' : 'Витрати');
+    }
+
+    if (filtersApplied.categoryId) {
+      const category = categoriesById.get(Number(filtersApplied.categoryId));
+      if (category) {
+        chips.push(category.name);
+      }
+    }
+
+    if (filtersApplied.currency) {
+      chips.push(filtersApplied.currency);
+    }
+
+    if (filtersApplied.search.trim()) {
+      chips.push(`"${filtersApplied.search.trim()}"`);
+    }
+
+    if (filtersApplied.dateFrom || filtersApplied.dateTo) {
+      chips.push(
+        filtersApplied.dateFrom && filtersApplied.dateTo
+          ? `${filtersApplied.dateFrom} → ${filtersApplied.dateTo}`
+          : filtersApplied.dateFrom
+            ? `Від ${filtersApplied.dateFrom}`
+            : `До ${filtersApplied.dateTo}`
+      );
+    }
+
+    if (filtersApplied.amountMin || filtersApplied.amountMax) {
+      chips.push(
+        `${filtersApplied.amountMin || '0'}-${filtersApplied.amountMax || '∞'}`
+      );
+    }
+
+    if (chips.length === 0 && filtersApplied.period) {
+      const periodLabel = PERIOD_OPTIONS.find((option) => option.value === filtersApplied.period)?.label;
+      if (periodLabel) {
+        chips.push(periodLabel);
+      }
+    }
+
+    return chips;
+  }, [categoriesById, filtersApplied]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const query = window.matchMedia('(max-width: 820px)');
+    const applyMobileState = (matches: boolean) => {
+      setIsMobile(matches);
+      setFiltersOpen(!matches);
+      setCategoriesOpen(!matches);
+    };
+
+    applyMobileState(query.matches);
+    const handleChange = (event: MediaQueryListEvent) => applyMobileState(event.matches);
+    query.addEventListener('change', handleChange);
+
+    return () => {
+      query.removeEventListener('change', handleChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -859,209 +930,232 @@ export function MiniAppShell() {
         {dashboard ? <DailyFlowChart items={dashboard.dailySeries} /> : null}
       </section>
 
-      <section className="panel">
-        <div className="sectionHeading">
+      <section className={`panel mobileSection ${isMobile ? 'isCollapsible' : ''}`}>
+        <div className="sectionHeading sectionHeadingCompact">
           <div>
             <h3>Фільтри</h3>
-            <span>Контролюй таблицю і summary одним набором фільтрів.</span>
+            {!isMobile ? <span>Контролюй таблицю і summary одним набором фільтрів.</span> : null}
           </div>
+          {isMobile ? (
+            <button
+              className="sectionToggle"
+              onClick={() => setFiltersOpen((current) => !current)}
+              type="button"
+            >
+              {filtersOpen ? 'Згорнути' : `Показати${activeFilterChips.length ? ` · ${activeFilterChips.length}` : ''}`}
+            </button>
+          ) : null}
         </div>
 
-        <div className="filterLayout">
-          <div className="filterGroup wide">
-            <label>Швидкий період</label>
-            <div className="periodChips">
-              {PERIOD_OPTIONS.map((option) => (
-                <button
-                  className={filtersDraft.period === option.value ? 'isActive' : ''}
-                  key={option.value}
-                  onClick={() =>
+        {isMobile && activeFilterChips.length > 0 ? (
+          <div className="compactChips">
+            {activeFilterChips.map((chip) => (
+              <span className="compactChip" key={chip}>
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {(!isMobile || filtersOpen) ? (
+          <>
+            <div className="filterLayout">
+              <div className="filterGroup wide">
+                <label>Швидкий період</label>
+                <div className="periodChips">
+                  {PERIOD_OPTIONS.map((option) => (
+                    <button
+                      className={filtersDraft.period === option.value ? 'isActive' : ''}
+                      key={option.value}
+                      onClick={() =>
+                        setFiltersDraft((current) => ({
+                          ...current,
+                          dateFrom: '',
+                          dateTo: '',
+                          period: option.value
+                        }))
+                      }
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                  <button
+                    className={filtersDraft.period === '' ? 'isActive' : ''}
+                    onClick={() =>
+                      setFiltersDraft((current) => ({
+                        ...current,
+                        period: ''
+                      }))
+                    }
+                    type="button"
+                  >
+                    Без пресета
+                  </button>
+                </div>
+              </div>
+
+              <div className="filterGroup">
+                <label>Тип</label>
+                <select
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, type: event.target.value as TransactionTypeFilter }))
+                  }
+                  value={filtersDraft.type}
+                >
+                  <option value="all">Усі</option>
+                  <option value="expense">Витрати</option>
+                  <option value="income">Доходи</option>
+                </select>
+              </div>
+
+              <div className="filterGroup">
+                <label>Категорія</label>
+                <select
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, categoryId: event.target.value }))
+                  }
+                  value={filtersDraft.categoryId}
+                >
+                  <option value="">Усі</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filterGroup">
+                <label>Валюта</label>
+                <select
+                  onChange={(event) =>
                     setFiltersDraft((current) => ({
                       ...current,
-                      dateFrom: '',
-                      dateTo: '',
-                      period: option.value
+                      currency: event.target.value as FiltersState['currency']
                     }))
                   }
-                  type="button"
+                  value={filtersDraft.currency}
                 >
-                  {option.label}
-                </button>
-              ))}
-              <button
-                className={filtersDraft.period === '' ? 'isActive' : ''}
-                onClick={() =>
-                  setFiltersDraft((current) => ({
-                    ...current,
-                    period: ''
-                  }))
-                }
-                type="button"
-              >
-                Без пресета
+                  <option value="">Усі</option>
+                  <option value="USD">USD</option>
+                  <option value="PLN">PLN</option>
+                  <option value="UAH">UAH</option>
+                </select>
+              </div>
+
+              <div className="filterGroup wide">
+                <label>Пошук у нотатках</label>
+                <input
+                  className="textInput"
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, search: event.target.value }))
+                  }
+                  placeholder="Наприклад: таксі, обід, подарунок"
+                  value={filtersDraft.search}
+                />
+              </div>
+
+              <div className="filterGroup">
+                <label>Дата від</label>
+                <input
+                  className="textInput"
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({
+                      ...current,
+                      dateFrom: event.target.value,
+                      period: ''
+                    }))
+                  }
+                  type="date"
+                  value={filtersDraft.dateFrom}
+                />
+              </div>
+
+              <div className="filterGroup">
+                <label>Дата до</label>
+                <input
+                  className="textInput"
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({
+                      ...current,
+                      dateTo: event.target.value,
+                      period: ''
+                    }))
+                  }
+                  type="date"
+                  value={filtersDraft.dateTo}
+                />
+              </div>
+
+              <div className="filterGroup">
+                <label>Сума від</label>
+                <input
+                  className="textInput"
+                  min="0"
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, amountMin: event.target.value }))
+                  }
+                  step="0.01"
+                  type="number"
+                  value={filtersDraft.amountMin}
+                />
+              </div>
+
+              <div className="filterGroup">
+                <label>Сума до</label>
+                <input
+                  className="textInput"
+                  min="0"
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, amountMax: event.target.value }))
+                  }
+                  step="0.01"
+                  type="number"
+                  value={filtersDraft.amountMax}
+                />
+              </div>
+
+              <div className="filterGroup">
+                <label>Сортування</label>
+                <select
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, sortBy: event.target.value as TransactionSortBy }))
+                  }
+                  value={filtersDraft.sortBy}
+                >
+                  <option value="date">Дата</option>
+                  <option value="amount">Сума</option>
+                  <option value="amountUsd">USD екв.</option>
+                  <option value="category">Категорія</option>
+                  <option value="currency">Валюта</option>
+                </select>
+              </div>
+
+              <div className="filterGroup">
+                <label>Порядок</label>
+                <select
+                  onChange={(event) =>
+                    setFiltersDraft((current) => ({ ...current, sortOrder: event.target.value as SortOrder }))
+                  }
+                  value={filtersDraft.sortOrder}
+                >
+                  <option value="desc">Спадання</option>
+                  <option value="asc">Зростання</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="toolbar">
+              <button className="primaryButton" onClick={() => void handleApplyFilters()} type="button">
+                Застосувати
+              </button>
+              <button className="secondaryButton" onClick={() => void handleResetFilters()} type="button">
+                Скинути
               </button>
             </div>
-          </div>
-
-          <div className="filterGroup">
-            <label>Тип</label>
-            <select
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, type: event.target.value as TransactionTypeFilter }))
-              }
-              value={filtersDraft.type}
-            >
-              <option value="all">Усі</option>
-              <option value="expense">Витрати</option>
-              <option value="income">Доходи</option>
-            </select>
-          </div>
-
-          <div className="filterGroup">
-            <label>Категорія</label>
-            <select
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, categoryId: event.target.value }))
-              }
-              value={filtersDraft.categoryId}
-            >
-              <option value="">Усі</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filterGroup">
-            <label>Валюта</label>
-            <select
-              onChange={(event) =>
-                setFiltersDraft((current) => ({
-                  ...current,
-                  currency: event.target.value as FiltersState['currency']
-                }))
-              }
-              value={filtersDraft.currency}
-            >
-              <option value="">Усі</option>
-              <option value="USD">USD</option>
-              <option value="PLN">PLN</option>
-              <option value="UAH">UAH</option>
-            </select>
-          </div>
-
-          <div className="filterGroup wide">
-            <label>Пошук у нотатках</label>
-            <input
-              className="textInput"
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, search: event.target.value }))
-              }
-              placeholder="Наприклад: таксі, обід, подарунок"
-              value={filtersDraft.search}
-            />
-          </div>
-
-          <div className="filterGroup">
-            <label>Дата від</label>
-            <input
-              className="textInput"
-              onChange={(event) =>
-                setFiltersDraft((current) => ({
-                  ...current,
-                  dateFrom: event.target.value,
-                  period: ''
-                }))
-              }
-              type="date"
-              value={filtersDraft.dateFrom}
-            />
-          </div>
-
-          <div className="filterGroup">
-            <label>Дата до</label>
-            <input
-              className="textInput"
-              onChange={(event) =>
-                setFiltersDraft((current) => ({
-                  ...current,
-                  dateTo: event.target.value,
-                  period: ''
-                }))
-              }
-              type="date"
-              value={filtersDraft.dateTo}
-            />
-          </div>
-
-          <div className="filterGroup">
-            <label>Сума від</label>
-            <input
-              className="textInput"
-              min="0"
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, amountMin: event.target.value }))
-              }
-              step="0.01"
-              type="number"
-              value={filtersDraft.amountMin}
-            />
-          </div>
-
-          <div className="filterGroup">
-            <label>Сума до</label>
-            <input
-              className="textInput"
-              min="0"
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, amountMax: event.target.value }))
-              }
-              step="0.01"
-              type="number"
-              value={filtersDraft.amountMax}
-            />
-          </div>
-
-          <div className="filterGroup">
-            <label>Сортування</label>
-            <select
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, sortBy: event.target.value as TransactionSortBy }))
-              }
-              value={filtersDraft.sortBy}
-            >
-              <option value="date">Дата</option>
-              <option value="amount">Сума</option>
-              <option value="amountUsd">USD екв.</option>
-              <option value="category">Категорія</option>
-              <option value="currency">Валюта</option>
-            </select>
-          </div>
-
-          <div className="filterGroup">
-            <label>Порядок</label>
-            <select
-              onChange={(event) =>
-                setFiltersDraft((current) => ({ ...current, sortOrder: event.target.value as SortOrder }))
-              }
-              value={filtersDraft.sortOrder}
-            >
-              <option value="desc">Спадання</option>
-              <option value="asc">Зростання</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="toolbar">
-          <button className="primaryButton" onClick={() => void handleApplyFilters()} type="button">
-            Застосувати
-          </button>
-          <button className="secondaryButton" onClick={() => void handleResetFilters()} type="button">
-            Скинути
-          </button>
-        </div>
+          </>
+        ) : null}
       </section>
 
       <div className="adminGrid">
@@ -1142,93 +1236,118 @@ export function MiniAppShell() {
           )}
         </section>
 
-        <section className="panel">
-          <div className="sectionHeading">
+        <section className={`panel mobileSection ${isMobile ? 'isCollapsible' : ''}`}>
+          <div className="sectionHeading sectionHeadingCompact">
             <div>
               <h3>Категорії</h3>
-              <span>Створюй, перейменовуй і чисть зайве.</span>
+              {!isMobile ? <span>Створюй, перейменовуй і чисть зайве.</span> : null}
             </div>
+            {isMobile ? (
+              <button
+                className="sectionToggle"
+                onClick={() => setCategoriesOpen((current) => !current)}
+                type="button"
+              >
+                {categoriesOpen ? 'Згорнути' : `Показати · ${categories.length}`}
+              </button>
+            ) : null}
           </div>
 
-          <div className="categoryComposer">
-            <input
-              className="textInput"
-              onChange={(event) => setNewCategoryName(event.target.value)}
-              placeholder="Нова категорія"
-              value={newCategoryName}
-            />
-            <select onChange={(event) => setNewCategoryKind(event.target.value as 'expense' | 'income')} value={newCategoryKind}>
-              <option value="expense">Витрата</option>
-              <option value="income">Дохід</option>
-            </select>
-            <button className="primaryButton" disabled={savingCategory || !newCategoryName.trim()} onClick={() => void handleAddCategory()} type="button">
-              Додати
-            </button>
-          </div>
+          {isMobile && !categoriesOpen ? (
+            <div className="compactChips">
+              <span className="compactChip">{categories.length} категорій</span>
+              <span className="compactChip">
+                {categories.filter((category) => category.kind === 'expense').length} витрат
+              </span>
+              <span className="compactChip">
+                {categories.filter((category) => category.kind === 'income').length} доходів
+              </span>
+            </div>
+          ) : null}
 
-          <div className="categoryList">
-            {categories.map((category) => (
-              <article className="categoryRow" key={category.id}>
-                <div className="categoryInfo">
-                  {renamingCategoryId === category.id ? (
-                    <input
-                      className="textInput"
-                      onChange={(event) => setRenameValue(event.target.value)}
-                      value={renameValue}
-                    />
-                  ) : (
-                    <>
-                      <strong>{category.name}</strong>
-                      <p>
-                        {category.kind === 'income' ? 'Дохід' : 'Витрата'} · {category.usageCount} записів
-                      </p>
-                    </>
-                  )}
-                </div>
+          {(!isMobile || categoriesOpen) ? (
+            <>
+              <div className="categoryComposer">
+                <input
+                  className="textInput"
+                  onChange={(event) => setNewCategoryName(event.target.value)}
+                  placeholder="Нова категорія"
+                  value={newCategoryName}
+                />
+                <select onChange={(event) => setNewCategoryKind(event.target.value as 'expense' | 'income')} value={newCategoryKind}>
+                  <option value="expense">Витрата</option>
+                  <option value="income">Дохід</option>
+                </select>
+                <button className="primaryButton" disabled={savingCategory || !newCategoryName.trim()} onClick={() => void handleAddCategory()} type="button">
+                  Додати
+                </button>
+              </div>
 
-                <div className="rowActions">
-                  {renamingCategoryId === category.id ? (
-                    <>
-                      <button className="primaryButton" onClick={() => void handleRenameCategory(category.id)} type="button">
-                        Зберегти
-                      </button>
-                      <button
-                        className="secondaryButton"
-                        onClick={() => {
-                          setRenamingCategoryId(null);
-                          setRenameValue('');
-                        }}
-                        type="button"
-                      >
-                        Скасувати
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        className="secondaryButton"
-                        onClick={() => {
-                          setRenamingCategoryId(category.id);
-                          setRenameValue(category.name);
-                        }}
-                        type="button"
-                      >
-                        Перейменувати
-                      </button>
-                      <button
-                        className="dangerButton"
-                        disabled={category.usageCount > 0}
-                        onClick={() => void handleDeleteCategory(category.id)}
-                        type="button"
-                      >
-                        Видалити
-                      </button>
-                    </>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
+              <div className="categoryList">
+                {categories.map((category) => (
+                  <article className="categoryRow" key={category.id}>
+                    <div className="categoryInfo">
+                      {renamingCategoryId === category.id ? (
+                        <input
+                          className="textInput"
+                          onChange={(event) => setRenameValue(event.target.value)}
+                          value={renameValue}
+                        />
+                      ) : (
+                        <>
+                          <strong>{category.name}</strong>
+                          <p>
+                            {category.kind === 'income' ? 'Дохід' : 'Витрата'} · {category.usageCount} записів
+                          </p>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="rowActions">
+                      {renamingCategoryId === category.id ? (
+                        <>
+                          <button className="primaryButton" onClick={() => void handleRenameCategory(category.id)} type="button">
+                            Зберегти
+                          </button>
+                          <button
+                            className="secondaryButton"
+                            onClick={() => {
+                              setRenamingCategoryId(null);
+                              setRenameValue('');
+                            }}
+                            type="button"
+                          >
+                            Скасувати
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="secondaryButton"
+                            onClick={() => {
+                              setRenamingCategoryId(category.id);
+                              setRenameValue(category.name);
+                            }}
+                            type="button"
+                          >
+                            Перейменувати
+                          </button>
+                          <button
+                            className="dangerButton"
+                            disabled={category.usageCount > 0}
+                            onClick={() => void handleDeleteCategory(category.id)}
+                            type="button"
+                          >
+                            Видалити
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
         </section>
       </div>
 

@@ -23,6 +23,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -204,6 +205,7 @@ p {
 .filterGroup {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .filterGroup.wide {
@@ -224,7 +226,9 @@ textarea {
   border-radius: 16px;
   color: var(--text-main);
   display: block;
+  max-width: 100%;
   min-height: 48px;
+  min-width: 0;
   padding: 12px 14px;
   width: 100%;
 }
@@ -373,6 +377,14 @@ textarea {
   gap: 10px;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) auto;
   margin-bottom: 16px;
+}
+
+.categoryComposer > *,
+.formGrid > *,
+.filterLayout > *,
+.transactionCard > *,
+.categoryRow > * {
+  min-width: 0;
 }
 
 .categoryInfo {
@@ -622,6 +634,10 @@ code {
 }
 
 @media (max-width: 820px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   .shell {
     padding: calc(14px + var(--tg-safe-top)) 11px calc(18px + var(--tg-safe-bottom));
   }
@@ -732,6 +748,12 @@ code {
   .sectionToggle {
     min-height: 40px;
     padding: 9px 14px;
+  }
+
+  .textInput,
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   .chartCanvas {

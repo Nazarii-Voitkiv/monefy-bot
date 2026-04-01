@@ -2,7 +2,6 @@ import './globals.css';
 
 import type { Metadata } from 'next';
 import { Fraunces, IBM_Plex_Sans } from 'next/font/google';
-import Script from 'next/script';
 import type { ReactNode } from 'react';
 
 const displayFont = Fraunces({
@@ -29,10 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uk">
-      <body className={`${displayFont.variable} ${bodyFont.variable}`}>
-        <Script src="https://telegram.org/js/telegram-web-app.js?61" strategy="afterInteractive" />
-        {children}
-      </body>
+      <body className={`${displayFont.variable} ${bodyFont.variable}`}>{children}</body>
     </html>
   );
 }

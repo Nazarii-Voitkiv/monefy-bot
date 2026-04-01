@@ -197,11 +197,39 @@ export function MiniAppShell() {
       return;
     }
 
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[data-telegram-web-app="true"]'
+    );
+    const handleLoad = () => setScriptReady(true);
+
+    if (existingScript) {
+      existingScript.addEventListener('load', handleLoad, { once: true });
+
+      const fallback = window.setTimeout(() => {
+        setScriptReady(true);
+      }, 500);
+
+      return () => {
+        existingScript.removeEventListener('load', handleLoad);
+        window.clearTimeout(fallback);
+      };
+    }
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.dataset.telegramWebApp = 'true';
+    script.src = 'https://telegram.org/js/telegram-web-app.js?61';
+    script.addEventListener('load', handleLoad, { once: true });
+    document.head.appendChild(script);
+
     const fallback = window.setTimeout(() => {
       setScriptReady(true);
-    }, 250);
+    }, 500);
 
-    return () => window.clearTimeout(fallback);
+    return () => {
+      script.removeEventListener('load', handleLoad);
+      window.clearTimeout(fallback);
+    };
   }, []);
 
   useEffect(() => {

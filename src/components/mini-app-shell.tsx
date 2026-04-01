@@ -210,6 +210,9 @@ function DailyFlowChart({
     1
   );
   const labelStep = items.length > 20 ? 4 : items.length > 12 ? 3 : items.length > 8 ? 2 : 1;
+  const visibleLabels = items.filter(
+    (_item, index) => index % labelStep === 0 || index === items.length - 1
+  );
 
   const toY = (value: number): number =>
     paddingTop + chartHeight - (value / maxValue) * chartHeight;
@@ -272,27 +275,16 @@ function DailyFlowChart({
                 <g key={item.date}>
                   <circle className="chartPoint incomePoint" cx={toX(index)} cy={toY(item.incomesUsd)} r="4" />
                   <circle className="chartPoint expensePoint" cx={toX(index)} cy={toY(item.expensesUsd)} r="4" />
-                  {index % labelStep === 0 || index === items.length - 1 ? (
-                    <text
-                      className="chartLabel"
-                      textAnchor="end"
-                      transform={`translate(${toX(index)} ${height - 10}) rotate(-35)`}
-                    >
-                      {item.date.slice(5)}
-                    </text>
-                  ) : null}
                 </g>
               ))}
             </svg>
           </div>
 
-          <div className="chartTotals">
-            {items.map((item) => (
-              <div className="chartDayRow" key={`${item.date}-values`}>
-                <strong>{item.date}</strong>
-                <span className="positiveText">{formatMoney(item.incomesUsd)}</span>
-                <span className="negativeText">{formatMoney(item.expensesUsd)}</span>
-              </div>
+          <div className="chartXAxis">
+            {visibleLabels.map((item) => (
+              <span className="chartAxisLabel" key={`${item.date}-axis`}>
+                {item.date.slice(5)}
+              </span>
             ))}
           </div>
         </div>

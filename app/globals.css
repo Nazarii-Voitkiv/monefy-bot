@@ -430,33 +430,19 @@ textarea {
   fill: var(--negative);
 }
 
-.chartLabel,
-.chartTotals span {
+.chartXAxis {
   color: var(--text-muted);
-}
-
-.chartLabel {
-  fill: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 11px;
-}
-
-.chartTotals {
-  display: grid;
-  gap: 10px;
-}
-
-.chartDayRow {
-  align-items: center;
-  border-top: 1px solid rgba(31, 22, 14, 0.08);
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  padding-top: 10px;
+  padding: 0 24px;
 }
 
-.chartDayRow strong {
+.chartAxisLabel {
+  display: inline-block;
   font-size: 0.95rem;
+  min-width: 0;
+  text-align: center;
 }
 
 .barMeta {
